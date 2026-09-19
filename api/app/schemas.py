@@ -46,3 +46,25 @@ class UserOut(BaseModel):
 
 class RegisterOut(UserOut):
     needs_email_confirmation: bool = True
+
+
+class LlmProviderStatus(BaseModel):
+    configured: bool
+    last4: str | None = None
+
+
+class LlmSettingsOut(BaseModel):
+    openai: LlmProviderStatus
+    xai: LlmProviderStatus
+    anthropic: LlmProviderStatus
+    chat_provider: str
+    chat_models: dict[str, str]
+
+
+class LlmSettingsUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    openai_api_key: str | None = None
+    xai_api_key: str | None = None
+    anthropic_api_key: str | None = None
+    chat_provider: str | None = None

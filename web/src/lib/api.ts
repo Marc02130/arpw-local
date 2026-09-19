@@ -41,6 +41,16 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export type LlmProvider = 'openai' | 'xai' | 'anthropic';
+
+export type LlmSettings = {
+  openai: { configured: boolean; last4: string | null };
+  xai: { configured: boolean; last4: string | null };
+  anthropic: { configured: boolean; last4: string | null };
+  chat_provider: LlmProvider;
+  chat_models: Record<string, string>;
+};
+
 export type User = {
   id: string;
   email: string;
@@ -76,5 +86,12 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ token, password }),
       }),
+    patchMe: (full_name: string) =>
+      request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify({ full_name }) }),
+  },
+  settings: {
+    llm: () => request<LlmSettings>('/settings/llm'),
+    updateLlm: (body: Record<string, string>) =>
+      request<LlmSettings>('/settings/llm', { method: 'PUT', body: JSON.stringify(body) }),
   },
 };

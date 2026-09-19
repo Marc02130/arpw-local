@@ -6,6 +6,8 @@ import { VerifyEmail } from './pages/VerifyEmail';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 import { Dashboard } from './pages/Dashboard';
+import { Profile } from './pages/Profile';
+import { Layout } from './components/Layout';
 
 const Gate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, isEmailConfirmed } = useAuth();
@@ -52,7 +54,19 @@ const Shell: React.FC = () => {
         path="/dashboard"
         element={
           <Gate>
-            <Dashboard />
+            <Layout>
+              <Dashboard />
+            </Layout>
+          </Gate>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <Gate>
+            <Layout>
+              <Profile />
+            </Layout>
           </Gate>
         }
       />

@@ -94,3 +94,32 @@ def client(postgres_url: str):
     db.configure_engine(postgres_url)
     with TestClient(app) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def confirmed_client(client, monkeypatch):
+    import uuid
+    from urllib.parse import parse_qs, urlparse
+
+    captured: dict[str, str] = {}
+
+    def fake_send(to: str, subject: str, body: str) -> None:
+        captured["body"] = body
+
+    monkeypatch.setattr("app.mailer.send_mail", fake_send)
+    email = f"user-{uuid.uuid4().hex[:12]}@example.com"
+    client.post(
+        "/api/auth/register",
+        json={"email": email, "password": "correct-horse", "full_name": "Ada Lovelace"},
+    )
+    token = None
+    for part in captured["body"].split():
+        if "token=" in part:
+            token = parse_qs(urlparse(part.strip()).query)["token"][0]
+            break
+    assert token
+    client.get(f"/api/auth/confirm?token={token}", follow_redirects=False)
+    login = client.post("/api/auth/login", json={"email": email, "password": "correct-horse"})
+    assert login.status_code == 200
+    client.email = email
+    yield client

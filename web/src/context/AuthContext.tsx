@@ -1,10 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { api, ApiError, type User } from '../lib/api';
+import { api, ApiError, type LlmSettings, type User } from '../lib/api';
 
 type AuthContextValue = {
   user: User | null;
+  llm: LlmSettings | null;
   loading: boolean;
   isEmailConfirmed: boolean;
+  refreshLlm: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -17,28 +19,52 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [llm, setLlm] = useState<LlmSettings | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshLlm = useCallback(async () => {
+    try {
+      setLlm(await api.settings.llm());
+    } catch {
+      setLlm(null);
+    }
+  }, []);
 
   useEffect(() => {
     api.auth
       .me()
-      .then((me) => setUser(me))
-      .catch(() => setUser(null))
+      .then(async (me) => {
+        setUser(me);
+        if (me.email_confirmed_at) {
+          await refreshLlm();
+        }
+      })
+      .catch(() => {
+        setUser(null);
+        setLlm(null);
+      })
       .finally(() => setLoading(false));
 
-    const onUnauthorized = () => setUser(null);
+    const onUnauthorized = () => {
+      setUser(null);
+      setLlm(null);
+    };
     window.addEventListener('arpw:unauthorized', onUnauthorized);
     return () => window.removeEventListener('arpw:unauthorized', onUnauthorized);
-  }, []);
+  }, [refreshLlm]);
 
   const login = useCallback(async (email: string, password: string) => {
     const me = await api.auth.login(email, password);
     setUser(me);
-  }, []);
+    if (me.email_confirmed_at) {
+      await refreshLlm();
+    }
+  }, [refreshLlm]);
 
   const register = useCallback(async (email: string, password: string, fullName: string) => {
     await api.auth.register(email, password, fullName);
     setUser(null);
+    setLlm(null);
   }, []);
 
   const logout = useCallback(async () => {
@@ -50,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     setUser(null);
+    setLlm(null);
   }, []);
 
   const resendConfirmation = useCallback(async (email: string) => {
@@ -63,15 +90,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetPassword = useCallback(async (token: string, password: string) => {
     const me = await api.auth.resetPassword(token, password);
     setUser(me);
-  }, []);
+    if (me.email_confirmed_at) {
+      await refreshLlm();
+    }
+  }, [refreshLlm]);
 
   const isEmailConfirmed = Boolean(user?.email_confirmed_at);
 
   const value = useMemo(
     () => ({
       user,
+      llm,
       loading,
       isEmailConfirmed,
+      refreshLlm,
       login,
       register,
       logout,
@@ -81,8 +113,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }),
     [
       user,
+      llm,
       loading,
       isEmailConfirmed,
+      refreshLlm,
       login,
       register,
       logout,
