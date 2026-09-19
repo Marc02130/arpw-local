@@ -7,6 +7,7 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
+import { Generate } from './pages/Generate';
 import { Layout } from './components/Layout';
 
 const Gate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -66,6 +67,16 @@ const Shell: React.FC = () => {
           <Gate>
             <Layout>
               <Profile />
+            </Layout>
+          </Gate>
+        }
+      />
+      <Route
+        path="/generate/:paperId"
+        element={
+          <Gate>
+            <Layout>
+              <Generate />
             </Layout>
           </Gate>
         }

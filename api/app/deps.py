@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.auth_utils import decode_token
 from app.config import settings
 from app.db import get_db
-from app.models import User
+from app.models import User, UserPaper
 
 
 def get_current_user(request: Request, session: Session = Depends(get_db)) -> User:
@@ -36,3 +36,14 @@ def get_confirmed_user(user: User = Depends(get_current_user)) -> User:
             },
         )
     return user
+
+
+def get_owned_paper(
+    paper_id: uuid.UUID,
+    user: User = Depends(get_confirmed_user),
+    session: Session = Depends(get_db),
+) -> UserPaper:
+    paper = session.get(UserPaper, paper_id)
+    if paper is None or paper.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    return paper

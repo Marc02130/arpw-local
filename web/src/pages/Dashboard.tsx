@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { documentsApi, type ExampleFile, type ReferenceFile } from '../lib/api';
+import { documentsApi, PAPER_TYPES, papersApi, type ExampleFile, type Paper, type ReferenceFile } from '../lib/api';
 import { UploadZone } from '../components/UploadZone';
 
 function statusLabel(status: string, chunks: number): string {
@@ -12,12 +12,17 @@ function statusLabel(status: string, chunks: number): string {
 
 export const Dashboard: React.FC = () => {
   const { user, llm } = useAuth();
+  const navigate = useNavigate();
   const [references, setReferences] = useState<ReferenceFile[]>([]);
   const [examples, setExamples] = useState<ExampleFile[]>([]);
+  const [papers, setPapers] = useState<Paper[]>([]);
+  const [title, setTitle] = useState('');
+  const [paperType, setPaperType] = useState('Empirical Study');
 
   const reload = useCallback(() => {
     void documentsApi.listReferences().then(setReferences);
     void documentsApi.listExamples().then(setExamples);
+    void papersApi.list().then(setPapers);
   }, []);
 
   useEffect(() => {
@@ -40,6 +45,54 @@ export const Dashboard: React.FC = () => {
           .
         </p>
       </div>
+
+      <section className="bg-white rounded shadow p-6 space-y-3">
+        <h2 className="font-medium">Start a paper</h2>
+        <div className="flex flex-wrap gap-2">
+          <input
+            className="border rounded px-3 py-2 flex-1 min-w-[12rem]"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <select
+            className="border rounded px-3 py-2"
+            value={paperType}
+            onChange={(e) => setPaperType(e.target.value)}
+          >
+            {PAPER_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="bg-primary-600 text-white rounded px-4 py-2 text-sm"
+            onClick={() => {
+              void papersApi.create(title, paperType).then((paper) => {
+                navigate(`/generate/${paper.paper_id}`);
+              });
+            }}
+          >
+            Start paper
+          </button>
+        </div>
+        {papers.length ? (
+          <ul className="text-sm divide-y">
+            {papers.map((p) => (
+              <li key={p.paper_id} className="py-2 flex justify-between gap-3">
+                <span>
+                  {p.title} · {p.paper_type} · v{p.version}
+                </span>
+                <Link className="text-primary-600" to={`/generate/${p.paper_id}`}>
+                  Continue
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
 
       <section className="bg-white rounded shadow p-6 space-y-3">
         <h2 className="font-medium">Supporting papers (literature) · {literature.length}/500</h2>

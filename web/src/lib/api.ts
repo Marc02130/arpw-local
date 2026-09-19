@@ -141,6 +141,68 @@ async function postFile<T>(path: string, file: File, fields?: Record<string, str
   return res.json() as Promise<T>;
 }
 
+export const PAPER_TYPES = [
+  'Empirical Study',
+  'Literature Review',
+  'Theoretical Paper',
+  'Case Study',
+] as const;
+export const PAPER_SECTIONS = [
+  'Abstract',
+  'Introduction',
+  'Literature Review',
+  'Methods',
+  'Results',
+  'Discussion',
+  'Conclusion',
+  'References',
+] as const;
+export const CITATION_STYLES = ['APA', 'MLA', 'Chicago'] as const;
+export const OUTPUT_FORMATS = ['markdown', 'word'] as const;
+
+export type Paper = {
+  paper_id: string;
+  title: string;
+  content: string;
+  sections: string[] | null;
+  paper_type: string;
+  citation_style: string;
+  output_format: string;
+  version: number;
+  status: string;
+  research_prompt: string;
+  outline: string;
+  attribution: unknown;
+  created_at: string;
+  reference_count: number;
+};
+
+export type Passage = {
+  vector_id: string;
+  file_id: string;
+  chunk_text: string;
+  section: string | null;
+  source_role: string;
+  score: number;
+  page: number | null;
+  chunk_role: string | null;
+};
+
+export const papersApi = {
+  list: () => request<Paper[]>('/papers'),
+  create: (title: string, paper_type: string) =>
+    request<Paper>('/papers', { method: 'POST', body: JSON.stringify({ title, paper_type }) }),
+  get: (id: string) => request<Paper>(`/papers/${id}`),
+  patch: (id: string, body: Record<string, unknown>) =>
+    request<Paper>(`/papers/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  remove: (id: string) => request<void>(`/papers/${id}`, { method: 'DELETE' }),
+  retrieve: (id: string, body: { research_prompt: string; paper_type: string; sections?: string[] }) =>
+    request<{ passages: Passage[] }>(`/papers/${id}/retrieve`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+};
+
 export const documentsApi = {
   listReferences: () => request<ReferenceFile[]>('/references'),
   uploadReference: (file: File, sourceRole: SourceRole) =>
