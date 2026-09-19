@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     EXAMPLE_FILE_CAP: int = 10
     UPLOAD_BATCH_SIZE: int = 10
     UPLOAD_ROOT: str = "/data/uploads"
-    SMTP_HOST: str = "host.docker.internal"
-    SMTP_PORT: int = 54325
+    SMTP_HOST: str = "mail"
+    SMTP_PORT: int = 1025
     SMTP_FROM: str = "noreply@localhost"
     EMAIL_TOKEN_TTL_SECONDS: int = 3600
     AUTH_EMAIL_RATE_PER_HOUR: int = 30

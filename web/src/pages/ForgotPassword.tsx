@@ -30,8 +30,8 @@ export const ForgotPassword: React.FC = () => {
       {sent ? (
         <p className="text-sm text-gray-700">
           If an account exists for that address, a reset link is on its way. Check{' '}
-          <a className="text-primary-600" href="http://127.0.0.1:54324" target="_blank" rel="noreferrer">
-            http://127.0.0.1:54324
+          <a className="text-primary-600" href="http://localhost:8026" target="_blank" rel="noreferrer">
+            http://localhost:8026
           </a>
           .
         </p>

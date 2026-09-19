@@ -40,7 +40,7 @@ PR 09 does **not** depend on PR 08: generate does not read interrogation notes. 
 - **Title:** `slice01: Compose scaffold (api/web/db volumes, health)`
 - **Files:** `docker-compose.yml`, `docker-compose.dev.yml`, `api/Dockerfile`, `api/app/main.py` (`/api/health`, `/api/ready`), `api/app/config.py`, `web/Dockerfile`, `web/nginx.conf`, `web` placeholder `index.html`, `.env.example`, `.gitignore`, `pytest.ini`, `tests/unit/test_unit_slice01_scaffold.py`, `tests/uat/test_uat_slice01_scaffold.py`
 - **Depends on:** none
-- **Description:** `docker compose up --build` serves `:8082` (RAGged keeps `:8080`). Health JSON (`/api/health` async). Named volumes. nginx `client_max_body_size 55m`; default `proxy_read_timeout 600s`. Config constants `MAX_FILE_SIZE` / `MAX_UPLOAD_BODY_BYTES=12582912`. UAT: a **56 MB** POST 413s; do **not** copy RAGged “55m is the multi-file product limit” tests. No Mailpit container — SMTP to ARPW’s mailbox `:54325` / UI `:54324`. No product routes yet. **No chat API keys in `.env.example`.**
+- **Description:** `docker compose up --build` serves `:8082` (RAGged keeps `:8080`). Health JSON (`/api/health` async). Named volumes. nginx `client_max_body_size 55m`; default `proxy_read_timeout 600s`. Config constants `MAX_FILE_SIZE` / `MAX_UPLOAD_BODY_BYTES=12582912`. UAT: a **56 MB** POST 413s; do **not** copy RAGged “55m is the multi-file product limit” tests. Own Mailpit sidecar UI `:8026` (SMTP `mail:1025`, not published). No product routes yet. **No chat API keys in `.env.example`.**
 
 ## PR 02 — Schema
 
@@ -54,7 +54,7 @@ PR 09 does **not** depend on PR 08: generate does not read interrogation notes. 
 - **Title:** `slice03: Cookie JWT, confirmation, password reset`
 - **Files:** `auth_utils.py`, `routers/auth.py`, `mailer.py`, `origin.py`, `deps.py`, `web` Login/VerifyEmail/Forgot + **rewritten** ResetPassword (`?token=` → POST `/api/auth/reset-password`) + AuthContext (`GET /me` only) + router shell, Jest validateAuth, unit/uat auth tests
 - **Depends on:** PR 02
-- **Description:** Register does not set cookie; **409 if email taken** (not a resend). Confirm via shared Mailpit `:54324`. Invalid confirm → 302 `/verify-email?error=invalid`. Login 403 unconfirmed. Reset one-shot from query token (not GoTrue `isRecovery`). CSRF allowlist (missing Origin allowed; no forgot/reset exempt). Password min 6. Unique `token_hash`; 3600s; resend-only invalidates prior unused confirm tokens in the same transaction. AuthContext does **not** fetch `/settings/llm` yet (PR 04).
+- **Description:** Register does not set cookie; **409 if email taken** (not a resend). Confirm via this stack’s Mailpit `:8026`. Invalid confirm → 302 `/verify-email?error=invalid`. Login 403 unconfirmed. Reset one-shot from query token (not GoTrue `isRecovery`). CSRF allowlist (missing Origin allowed; no forgot/reset exempt). Password min 6. Unique `token_hash`; 3600s; resend-only invalidates prior unused confirm tokens in the same transaction. AuthContext does **not** fetch `/settings/llm` yet (PR 04).
 
 ## PR 04 — Profile + LLM keys
 

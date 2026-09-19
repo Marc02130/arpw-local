@@ -166,7 +166,7 @@ flowchart LR
   Nginx["web (nginx :80)"]
   API["api (uvicorn :8000)\nFastAPI + Alembic"]
   DB["db (pgvector/pg16)"]
-  Mail["shared Mailpit (ARPW)\nUI :54324 / SMTP :54325"]
+  Mail["mail (Mailpit)\nSMTP :1025 / UI :8026"]
   VolU["volume uploads\n/data/uploads"]
   VolP["volume pgdata"]
   XAI["api.x.ai\nchat/completions"]
@@ -183,15 +183,16 @@ flowchart LR
   DB --> VolP
 ```
 
-Compose services (follow `ragged/docker-compose.yml`; **no** Mailpit container — share ARPW’s):
+Compose services (follow `ragged/docker-compose.yml`, plus this stack’s own Mailpit):
 
 | Service | Image / build | Ports | Notes |
 |---|---|---|---|
 | `db` | `pgvector/pgvector:pg16` | none published | Health: `pg_isready`. Volume `pgdata`. `shm_size: 128mb`. |
-| `api` | `./api` | none in prod compose | `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2`. Volume `uploads` → `/data/uploads`. `DATABASE_URL` assembled from `POSTGRES_*` (do not set in `.env`). SMTP to `host.docker.internal:54325` (ARPW Inbucket). |
+| `api` | `./api` | none in prod compose | `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2`. Volume `uploads` → `/data/uploads`. `DATABASE_URL` assembled from `POSTGRES_*` (do not set in `.env`). SMTP to Compose service `mail:1025`. |
 | `web` | `./web` (nginx) | **`8082:80`** | Proxies `/api/` to `api:8000`. RAGged keeps `:8080`. `client_max_body_size 55m` (one file ≤ 10 MiB; **not** a 10×10 MB batch). Default `proxy_read_timeout` / `proxy_send_timeout` **600s**. A **sibling regex location** for generate (trailing slash optional) duplicates the **full** `/api/` proxy settings (not timeout-only — nginx regex locations do not inherit `proxy_pass`) with **2100s**. Outline stays on `/api/` (600s). Do not copy RAGged tests that treat 55m as a multi-file product limit. |
+| `mail` | `axllent/mailpit` | **`8026:8025`** (UI only) | SMTP internal `mail:1025`, not published. Independent of ARPW Inbucket `:54324`. |
 
-Dev overlay (`docker-compose.dev.yml`): publish `api` as `8002:8000` so host webpack-dev-server `:3001` can proxy `/api` (RAGged uses `:8001` / `:3000`). Dogfood remains nginx `:8082`. Mail UI is **`http://127.0.0.1:54324`**. Enable `smtp_port = 54325` in ARPW `supabase/config.toml` and restart that stack once.
+Dev overlay (`docker-compose.dev.yml`): publish `api` as `8002:8000` so host webpack-dev-server `:3001` can proxy `/api` (RAGged uses `:8001` / `:3000`). Dogfood remains nginx `:8082`. Mail UI is **`http://localhost:8026`**.
 
 Health (copy RAGged `ragged/api/app/main.py`):
 
@@ -306,7 +307,7 @@ Port ARPW screens that the router actually mounts (`arpw/.docs/TECHNICAL_SPECIFI
 | `/library` | `LibraryPage.tsx` | Same |
 | `/` | redirect `/dashboard` | Same |
 
-Replace `arpw/src/supabaseClient.ts` + PostgREST calls with `web/src/lib/api.ts` patterned on `ragged/web/src/lib/api.ts` (`credentials: 'include'`, `ApiError`, `arpw:unauthorized` event). AuthContext **PR 03:** `GET /api/auth/me` only; llm settings unset. **PR 04** adds `GET /api/settings/llm` after `/me`. Never put ciphertext, full key, or last4 on `/auth/me`. VerifyEmail mailbox copy is the shared ARPW mailbox **`http://127.0.0.1:54324`**. Persist signup email in `location.state` (already in ARPW `Login.tsx`) for resend; resend does not need an unconfirmed cookie. Do not treat a second `POST /auth/register` as resend (409 if email taken).
+Replace `arpw/src/supabaseClient.ts` + PostgREST calls with `web/src/lib/api.ts` patterned on `ragged/web/src/lib/api.ts` (`credentials: 'include'`, `ApiError`, `arpw:unauthorized` event). AuthContext **PR 03:** `GET /api/auth/me` only; llm settings unset. **PR 04** adds `GET /api/settings/llm` after `/me`. Never put ciphertext, full key, or last4 on `/auth/me`. VerifyEmail mailbox copy is this stack’s Mailpit **`http://localhost:8026`**. Persist signup email in `location.state` (already in ARPW `Login.tsx`) for resend; resend does not need an unconfirmed cookie. Do not treat a second `POST /auth/register` as resend (409 if email taken).
 
 ### Auth (D2, D13)
 

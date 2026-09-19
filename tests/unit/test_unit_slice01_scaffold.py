@@ -43,10 +43,12 @@ def test_ready_is_sync_select_one() -> None:
     assert "SELECT 1" in source
 
 
-def test_default_compose_publishes_only_8082() -> None:
+def test_default_compose_publishes_8082_and_mailpit() -> None:
     services = _compose()["services"]
     assert services["web"]["ports"] == ["8082:80"]
-    assert "mail" not in services
+    assert services["mail"]["ports"] == ["8026:8025"]
+    assert services["api"]["environment"]["SMTP_HOST"] == "mail"
+    assert str(services["api"]["environment"]["SMTP_PORT"]) == "1025"
     assert "ports" not in services["api"]
     assert "ports" not in services["db"]
 
@@ -98,7 +100,8 @@ def test_nginx_body_timeout_and_forwarded_headers() -> None:
 def test_env_example_has_required_keys_and_no_chat_secrets() -> None:
     text = ENV_EXAMPLE.read_text()
     assert "PUBLIC_ORIGINS=http://localhost:8082,http://localhost:3001" in text
-    assert "SMTP_PORT=54325" in text
+    assert "SMTP_HOST" not in text
+    assert "54325" not in text
     assert "JWT_SECRET=" in text
     assert "COOKIE_SECURE=" in text
     assert "POSTGRES_USER=" in text
