@@ -31,7 +31,7 @@ def test_initial_migration_is_paper_centric_minilm() -> None:
     assert "token_hash TEXT NOT NULL UNIQUE" in text
     assert "ARRAY['literature']::text[]" in text
     assert "chat_provider TEXT NOT NULL DEFAULT 'xai'" in text
-    assert "Reference cap of 500 files reached" in text
+    assert "Reference cap of 10 files reached" in text
     assert "Example cap of 10 files reached" in text
     assert "chunk_tsv tsvector GENERATED ALWAYS" in text
     assert "hnsw" not in text.lower()

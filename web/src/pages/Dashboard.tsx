@@ -42,8 +42,8 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <section className="bg-white rounded shadow p-6 space-y-3">
-        <h2 className="font-medium">Supporting papers (literature) · {literature.length}/500</h2>
-        <UploadZone kind="literature" existingCount={references.length} cap={500} onChanged={reload} />
+        <h2 className="font-medium">Supporting papers (literature) · {literature.length}/10</h2>
+        <UploadZone kind="literature" existingCount={references.length} cap={10} onChanged={reload} />
         <FileList
           rows={literature}
           onDelete={(id) => void documentsApi.deleteReference(id).then(reload)}
@@ -51,8 +51,8 @@ export const Dashboard: React.FC = () => {
       </section>
 
       <section className="bg-white rounded shadow p-6 space-y-3">
-        <h2 className="font-medium">Original research (primary) · {primary.length} of the 500 reference slots</h2>
-        <UploadZone kind="primary" existingCount={references.length} cap={500} onChanged={reload} />
+        <h2 className="font-medium">Original research (primary) · {primary.length} of the 10 reference slots</h2>
+        <UploadZone kind="primary" existingCount={references.length} cap={10} onChanged={reload} />
         <FileList
           rows={primary}
           onDelete={(id) => void documentsApi.deleteReference(id).then(reload)}

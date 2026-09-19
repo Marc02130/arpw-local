@@ -272,8 +272,8 @@ def upgrade() -> None:
         LANGUAGE plpgsql
         AS $$
         BEGIN
-          IF (SELECT count(*) FROM "references" WHERE user_id = NEW.user_id) >= 500 THEN
-            RAISE EXCEPTION 'Reference cap of 500 files reached'
+          IF (SELECT count(*) FROM "references" WHERE user_id = NEW.user_id) >= 10 THEN
+            RAISE EXCEPTION 'Reference cap of 10 files reached'
               USING ERRCODE = 'P0001';
           END IF;
           RETURN NEW;

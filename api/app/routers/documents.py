@@ -62,8 +62,8 @@ class ReferencePatch(BaseModel):
 
 def _cap_message(exc: IntegrityError) -> str | None:
     raw = str(getattr(exc, "orig", exc))
-    if "Reference cap of 500 files reached" in raw:
-        return "Reference cap of 500 files reached"
+    if "Reference cap of 10 files reached" in raw:
+        return "Reference cap of 10 files reached"
     if "Example cap of 10 files reached" in raw:
         return "Example cap of 10 files reached"
     return None
@@ -119,7 +119,7 @@ def upload_reference(
         select(func.count()).select_from(Reference).where(Reference.user_id == user.id)
     ) or 0
     if count >= settings.REFERENCE_FILE_CAP:
-        raise HTTPException(status_code=413, detail="Reference cap of 500 files reached")
+        raise HTTPException(status_code=413, detail="Reference cap of 10 files reached")
     file_id = uuid4()
     relative = files_service.new_relative_path(user.id, file_id, kind)
     files_service.write_bytes(relative, data)
