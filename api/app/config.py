@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     MAX_UPLOAD_BODY_BYTES: int = 12_582_912
     REFERENCE_FILE_CAP: int = 500
     EXAMPLE_FILE_CAP: int = 10
-    UPLOAD_BATCH_SIZE: int = 10
+    UPLOAD_BATCH_SIZE: int = 500
     SPA_UPLOAD_CONCURRENCY: int = 10
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
