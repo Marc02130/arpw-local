@@ -19,6 +19,9 @@ os.environ.setdefault(
 )
 os.environ.setdefault("JWT_SECRET", "dev-secret-dev-secret-dev-secret-xx")
 os.environ.setdefault("EMBEDDING_PROVIDER", "stub")
+_upload_root = Path("/tmp/arpw-test-uploads")
+_upload_root.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("UPLOAD_ROOT", str(_upload_root))
 
 
 def pytest_configure(config: pytest.Config) -> None:

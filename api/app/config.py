@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     REFERENCE_FILE_CAP: int = 500
     EXAMPLE_FILE_CAP: int = 10
     UPLOAD_BATCH_SIZE: int = 10
+    SPA_UPLOAD_CONCURRENCY: int = 2
+    CHUNK_SIZE: int = 1000
+    CHUNK_OVERLAP: int = 200
+    MIN_CHUNK_CHARS: int = 50
+    MAX_CONTENT_CHARS: int = 2_000_000
+    MAX_CHUNKS_PER_DOCUMENT: int = 2000
+    STALE_PROCESSING_SECONDS: int = 600
     UPLOAD_ROOT: str = "/data/uploads"
     SMTP_HOST: str = "mail"
     SMTP_PORT: int = 1025

@@ -95,3 +95,63 @@ export const api = {
       request<LlmSettings>('/settings/llm', { method: 'PUT', body: JSON.stringify(body) }),
   },
 };
+
+export type SourceRole = 'literature' | 'primary';
+
+export type ReferenceFile = {
+  file_id: string;
+  file_name: string;
+  file_size: number;
+  source_role: SourceRole;
+  status: string;
+  chunk_count: number;
+  embedding_model: string | null;
+  error_message: string | null;
+  citation_text: string | null;
+  uploaded_at: string;
+  updated_at: string;
+};
+
+export type ExampleFile = {
+  file_id: string;
+  file_name: string;
+  file_size: number;
+  status: string;
+  chunk_count: number;
+  embedding_model: string | null;
+  error_message: string | null;
+  uploaded_at: string;
+  updated_at: string;
+};
+
+async function postFile<T>(path: string, file: File, fields?: Record<string, string>): Promise<T> {
+  const fd = new FormData();
+  fd.append('file', file);
+  if (fields) {
+    Object.entries(fields).forEach(([k, v]) => fd.append(k, v));
+  }
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', body: fd, credentials: 'include' });
+  if (res.status === 401) {
+    window.dispatchEvent(new Event('arpw:unauthorized'));
+  }
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    throw new ApiError(res.status, typeof body.detail === 'string' ? body.detail : 'Upload failed');
+  }
+  return res.json() as Promise<T>;
+}
+
+export const documentsApi = {
+  listReferences: () => request<ReferenceFile[]>('/references'),
+  uploadReference: (file: File, sourceRole: SourceRole) =>
+    postFile<ReferenceFile>('/references', file, { source_role: sourceRole }),
+  deleteReference: (id: string) => request<void>(`/references/${id}`, { method: 'DELETE' }),
+  patchReference: (id: string, source_role: SourceRole) =>
+    request<ReferenceFile>(`/references/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ source_role }),
+    }),
+  listExamples: () => request<ExampleFile[]>('/examples'),
+  uploadExample: (file: File) => postFile<ExampleFile>('/examples', file),
+  deleteExample: (id: string) => request<void>(`/examples/${id}`, { method: 'DELETE' }),
+};

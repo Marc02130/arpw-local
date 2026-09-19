@@ -1,0 +1,76 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1276 >>
+stream
+BT
+/F1 12 Tf
+72 720 Td
+(Methods) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(We indexed a private reference corpus and retrieved passages for a known query token nfr7probe.) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(Each uploaded file was parsed, split on IMRaD headings, then windowed inside a section as 384-dimension hash embeddings.) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(Additional methods detail: sampling, inclusion criteria, and how section labels come from headings rather than the first line of a mixed window.) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(Results) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(A retrieval hit on nfr7probe must return a chunk from this fixture, not an unrelated document.) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(Generation must refuse citation ids that were not in the retrieved set.) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(This paragraph exists so the fixture is longer than the minimum ingest chunk size used by upload_processor.) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(Additional results detail: overlap with the probe token, embedding dimension, and that empty files are rejected before embed.) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(References) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(Smith, A. \(2020\). Unrelated bibliography entry that must not mix into methods chunks. Extra filler so this section exceeds the minimum chunk length used at ingest.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001569 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1639
+%%EOF

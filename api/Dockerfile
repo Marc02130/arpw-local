@@ -5,6 +5,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+ENV FASTEMBED_CACHE_PATH=/models
+RUN mkdir -p /models \
+    && python -c "from fastembed import TextEmbedding; TextEmbedding('sentence-transformers/all-MiniLM-L6-v2')"
+
 COPY alembic.ini .
 COPY alembic ./alembic
 COPY app ./app
