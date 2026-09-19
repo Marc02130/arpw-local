@@ -186,6 +186,22 @@ export type Passage = {
   score: number;
   page: number | null;
   chunk_role: string | null;
+  pinned?: boolean;
+};
+
+export type Pin = {
+  pin_id: string;
+  paper_id: string;
+  file_id: string;
+  vector_id: string;
+  target_section: string | null;
+  created_at: string;
+  file_name: string;
+  source_role: string;
+  chunk_text: string;
+  section: string | null;
+  page: number | null;
+  chunk_role: string | null;
 };
 
 export const papersApi = {
@@ -201,6 +217,10 @@ export const papersApi = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  listPins: (id: string) => request<Pin[]>(`/papers/${id}/pins`),
+  pin: (id: string, body: { vector_id: string; file_id: string; target_section?: string | null }) =>
+    request<Pin>(`/papers/${id}/pins`, { method: 'POST', body: JSON.stringify(body) }),
+  unpin: (id: string, pinId: string) => request<void>(`/papers/${id}/pins/${pinId}`, { method: 'DELETE' }),
 };
 
 export const documentsApi = {

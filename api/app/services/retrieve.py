@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.services import classify
 from app.services import embeddings as embeddings_service
+from app.services.pins import list_pins
 from app.services.templates import PAPER_SECTIONS, build_retrieval_query, get_section_template
 
 MINILM = "sentence-transformers/all-MiniLM-L6-v2"
@@ -27,6 +28,7 @@ class Passage:
     score: float
     page: int | None
     chunk_role: str | None
+    pinned: bool = False
 
 
 def _vector_literal(values: list[float]) -> str:
@@ -91,26 +93,76 @@ def _match(
     return out
 
 
+def _pins_for_section(
+    session: Session, paper_id: UUID, user_id: UUID, paper_type: str, section: str
+) -> list[Passage]:
+    if section == "References":
+        return []
+    literature_review = paper_type == "Literature Review"
+    out: list[Passage] = []
+    for pin in list_pins(session, paper_id, user_id):
+        if pin.source_role not in ("literature", "primary"):
+            continue
+        if literature_review and pin.source_role == "primary":
+            continue
+        if pin.target_section is not None and pin.target_section != section:
+            continue
+        out.append(
+            Passage(
+                vector_id=pin.vector_id,
+                file_id=pin.file_id,
+                chunk_text=pin.chunk_text,
+                section=pin.section,
+                source_role=pin.source_role,
+                score=PINNED_SCORE,
+                page=pin.page,
+                chunk_role=pin.chunk_role,
+                pinned=True,
+            )
+        )
+    return out
+
+
+def _merge_pinned_first(pinned: list[Passage], retrieved: list[Passage]) -> list[Passage]:
+    seen: set[UUID] = set()
+    out: list[Passage] = []
+    for row in [*pinned, *retrieved]:
+        if row.vector_id in seen:
+            continue
+        seen.add(row.vector_id)
+        out.append(row)
+        if len(out) >= MATCH_COUNT:
+            break
+    return out
+
+
 def retrieve_for_section(
     session: Session,
     user_id: UUID,
     paper_type: str,
     section: str,
     research_prompt: str,
+    paper_id: UUID | None = None,
 ) -> list[Passage]:
     template = get_section_template(paper_type, section)
+    pinned = (
+        _pins_for_section(session, paper_id, user_id, paper_type, section)
+        if paper_id is not None
+        else []
+    )
     if template.preferred_source_role == "none":
-        return []
+        return pinned
     query = build_retrieval_query(paper_type, section, research_prompt)
     role = template.preferred_source_role
     if role == "both":
-        return _match(session, user_id, query, None, section)
-    if role == "primary":
-        primary = _match(session, user_id, query, "primary", section)
-        if primary:
-            return primary
-        return _match(session, user_id, query, "literature", section)
-    return _match(session, user_id, query, "literature", section)
+        retrieved = _match(session, user_id, query, None, section)
+    elif role == "primary":
+        retrieved = _match(session, user_id, query, "primary", section)
+        if not retrieved:
+            retrieved = _match(session, user_id, query, "literature", section)
+    else:
+        retrieved = _match(session, user_id, query, "literature", section)
+    return _merge_pinned_first(pinned, retrieved)
 
 
 def retrieve_for_query_sources(
@@ -119,13 +171,14 @@ def retrieve_for_query_sources(
     paper_type: str,
     research_prompt: str,
     sections: list[str] | None,
+    paper_id: UUID | None = None,
 ) -> list[Passage]:
     chosen = [s for s in (sections or list(PAPER_SECTIONS)) if s in PAPER_SECTIONS]
     seen: set[UUID] = set()
     merged: list[Passage] = []
     for section in chosen:
         for passage in retrieve_for_section(
-            session, user_id, paper_type, section, research_prompt
+            session, user_id, paper_type, section, research_prompt, paper_id=paper_id
         ):
             if passage.vector_id in seen:
                 continue

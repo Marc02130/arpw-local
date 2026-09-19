@@ -8,6 +8,7 @@ import {
   papersApi,
   type Paper,
   type Passage,
+  type Pin,
 } from '../lib/api';
 
 export const Generate: React.FC = () => {
@@ -21,6 +22,7 @@ export const Generate: React.FC = () => {
   const [sections, setSections] = useState<string[]>([]);
   const [prompt, setPrompt] = useState('');
   const [passages, setPassages] = useState<Passage[]>([]);
+  const [pins, setPins] = useState<Pin[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -35,6 +37,7 @@ export const Generate: React.FC = () => {
       setSections(row.sections ?? []);
       setPrompt(row.research_prompt);
     });
+    void papersApi.listPins(paperId).then(setPins);
   }, [paperId]);
 
   const persist = async (patch: Record<string, unknown>) => {
@@ -181,18 +184,68 @@ export const Generate: React.FC = () => {
           {busy ? 'Retrieving…' : 'Query sources'}
         </button>
       </div>
+      {pins.length ? (
+        <div className="bg-white rounded shadow p-6">
+          <h2 className="font-medium mb-3">Pinned ({pins.length})</h2>
+          <ul className="space-y-3 text-sm">
+            {pins.map((pin) => (
+              <li key={pin.pin_id} className="border rounded p-3">
+                <div className="flex justify-between gap-3">
+                  <p className="text-xs text-gray-500">
+                    {pin.source_role} · {pin.target_section || 'any section'} · {pin.file_name}
+                  </p>
+                  <button
+                    type="button"
+                    className="text-xs text-red-600"
+                    onClick={() => {
+                      void papersApi.unpin(paper.paper_id, pin.pin_id).then(() =>
+                        papersApi.listPins(paper.paper_id).then(setPins),
+                      );
+                    }}
+                  >
+                    Unpin
+                  </button>
+                </div>
+                <p className="mt-1">{pin.chunk_text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {passages.length ? (
         <div className="bg-white rounded shadow p-6">
           <h2 className="font-medium mb-3">Retrieved passages ({passages.length})</h2>
           <ul className="space-y-3 text-sm">
-            {passages.map((p) => (
-              <li key={p.vector_id} className="border rounded p-3">
-                <p className="text-xs text-gray-500 mb-1">
-                  {p.source_role} · {p.section || 'Unknown'} · {p.chunk_role}
-                </p>
-                <p>{p.chunk_text}</p>
-              </li>
-            ))}
+            {passages.map((p) => {
+              const pinned = pins.some((pin) => pin.vector_id === p.vector_id) || p.pinned;
+              return (
+                <li key={p.vector_id} className="border rounded p-3">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 mb-1">
+                      {pinned ? 'pinned · ' : ''}
+                      {p.source_role} · {p.section || 'Unknown'} · {p.chunk_role}
+                    </p>
+                    {pinned ? null : (
+                      <button
+                        type="button"
+                        className="text-xs text-primary-600"
+                        onClick={() => {
+                          void papersApi
+                            .pin(paper.paper_id, {
+                              vector_id: p.vector_id,
+                              file_id: p.file_id,
+                            })
+                            .then(() => papersApi.listPins(paper.paper_id).then(setPins));
+                        }}
+                      >
+                        Pin
+                      </button>
+                    )}
+                  </div>
+                  <p>{p.chunk_text}</p>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}

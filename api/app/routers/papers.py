@@ -12,7 +12,9 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.deps import get_confirmed_user, get_owned_paper
 from app.models import PaperReference, User, UserPaper
+from app.services import pins as pins_service
 from app.services import retrieve as retrieve_service
+from app.services.pins import PinError
 from app.services.templates import (
     CITATION_STYLES,
     DEFAULT_PAPER_SECTIONS,
@@ -85,6 +87,30 @@ class PassageOut(BaseModel):
     section: str | None
     source_role: str
     score: float
+    page: int | None
+    chunk_role: str | None
+    pinned: bool = False
+
+
+class PinCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    vector_id: UUID
+    file_id: UUID
+    target_section: str | None = None
+
+
+class PinOut(BaseModel):
+    pin_id: UUID
+    paper_id: UUID
+    file_id: UUID
+    vector_id: UUID
+    target_section: str | None
+    created_at: datetime
+    file_name: str
+    source_role: str
+    chunk_text: str
+    section: str | None
     page: int | None
     chunk_role: str | None
 
@@ -226,5 +252,52 @@ def query_sources(
         body.paper_type,
         body.research_prompt,
         body.sections,
+        paper_id=paper.paper_id,
     )
     return {"passages": [PassageOut.model_validate(p, from_attributes=True) for p in passages]}
+
+
+@router.get("/{paper_id}/pins", response_model=list[PinOut])
+def get_pins(
+    paper: UserPaper = Depends(get_owned_paper),
+    session: Session = Depends(get_db),
+    user: User = Depends(get_confirmed_user),
+) -> list[PinOut]:
+    return [
+        PinOut.model_validate(row, from_attributes=True)
+        for row in pins_service.list_pins(session, paper.paper_id, user.id)
+    ]
+
+
+@router.post("/{paper_id}/pins", response_model=PinOut, status_code=status.HTTP_201_CREATED)
+def post_pin(
+    body: PinCreate,
+    paper: UserPaper = Depends(get_owned_paper),
+    session: Session = Depends(get_db),
+    user: User = Depends(get_confirmed_user),
+) -> PinOut:
+    try:
+        row = pins_service.create_pin(
+            session,
+            user_id=user.id,
+            paper_id=paper.paper_id,
+            file_id=body.file_id,
+            vector_id=body.vector_id,
+            target_section=body.target_section,
+        )
+    except PinError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    return PinOut.model_validate(row, from_attributes=True)
+
+
+@router.delete("/{paper_id}/pins/{pin_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_pin(
+    pin_id: UUID,
+    paper: UserPaper = Depends(get_owned_paper),
+    session: Session = Depends(get_db),
+    user: User = Depends(get_confirmed_user),
+) -> None:
+    try:
+        pins_service.delete_pin(session, pin_id, user.id, paper.paper_id)
+    except PinError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
