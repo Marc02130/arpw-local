@@ -356,3 +356,88 @@ def post_interrogation(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except TimeoutError as exc:
         raise HTTPException(status_code=504, detail=str(exc)) from exc
+
+
+class GenerateBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    paper_type: str
+    sections: list[str]
+    research_prompt: str = ""
+    citation_style: str | None = None
+    output_format: str | None = None
+    sourceIds: list | None = None
+    source_ids: list | None = None
+    systemPrompt: str | None = None
+    system_prompt: str | None = None
+
+
+class OutlineBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    paper_type: str
+    sections: list[str]
+    research_prompt: str = ""
+
+
+@router.post("/{paper_id}/outline")
+def post_outline(
+    body: OutlineBody,
+    paper: UserPaper = Depends(get_owned_paper),
+    session: Session = Depends(get_db),
+    user: User = Depends(get_confirmed_user),
+) -> dict:
+    from app.services import outline as outline_service
+    from app.services.chat import MissingLlmKey
+
+    try:
+        text = outline_service.generate_outline(
+            session,
+            user,
+            paper,
+            body.paper_type,
+            body.sections,
+            body.research_prompt,
+        )
+    except MissingLlmKey as exc:
+        raise HTTPException(
+            status_code=400, detail={"code": exc.code, "detail": str(exc)}
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except TimeoutError as exc:
+        raise HTTPException(status_code=504, detail=str(exc)) from exc
+    session.refresh(paper)
+    return {"outline": text, "paper_id": str(paper.paper_id)}
+
+
+@router.post("/{paper_id}/generate")
+def post_generate(
+    body: GenerateBody,
+    paper: UserPaper = Depends(get_owned_paper),
+    session: Session = Depends(get_db),
+    user: User = Depends(get_confirmed_user),
+) -> dict:
+    from app.services import generate as generate_service
+    from app.services.chat import MissingLlmKey
+
+    locked_type = paper.paper_type
+    try:
+        return generate_service.generate_paper(
+            session,
+            user,
+            paper,
+            paper_type=body.paper_type or locked_type,
+            sections=body.sections,
+            research_prompt=body.research_prompt,
+            citation_style=body.citation_style,
+            output_format=body.output_format,
+        )
+    except MissingLlmKey as exc:
+        raise HTTPException(
+            status_code=400, detail={"code": exc.code, "detail": str(exc)}
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except TimeoutError as exc:
+        raise HTTPException(status_code=504, detail=str(exc)) from exc

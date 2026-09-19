@@ -23,6 +23,10 @@ export const Generate: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [passages, setPassages] = useState<Passage[]>([]);
   const [pins, setPins] = useState<Pin[]>([]);
+  const [outline, setOutline] = useState('');
+  const [draft, setDraft] = useState('');
+  const [warnings, setWarnings] = useState<Array<{ kind: string; message: string }>>([]);
+  const [disclaimer, setDisclaimer] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -36,6 +40,8 @@ export const Generate: React.FC = () => {
       setOutputFormat(row.output_format);
       setSections(row.sections ?? []);
       setPrompt(row.research_prompt);
+      setOutline(row.outline || '');
+      setDraft(row.content || '');
     });
     void papersApi.listPins(paperId).then(setPins);
   }, [paperId]);
@@ -181,15 +187,84 @@ export const Generate: React.FC = () => {
             onBlur={() => void persist({ research_prompt: prompt })}
           />
         </label>
-        <button
-          type="button"
-          disabled={busy || !prompt.trim()}
-          className="bg-primary-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
-          onClick={() => void querySources()}
-        >
-          {busy ? 'Retrieving…' : 'Query sources'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busy || !prompt.trim()}
+            className="border rounded px-4 py-2 text-sm disabled:opacity-50"
+            onClick={() => void querySources()}
+          >
+            {busy ? 'Working…' : 'Query sources'}
+          </button>
+          <button
+            type="button"
+            disabled={busy || !prompt.trim() || sections.length === 0}
+            className="border rounded px-4 py-2 text-sm disabled:opacity-50"
+            onClick={() => {
+              if (!paperId) return;
+              setBusy(true);
+              setError(null);
+              void papersApi
+                .outline(paperId, {
+                  paper_type: paperType,
+                  sections,
+                  research_prompt: prompt,
+                })
+                .then((res) => setOutline(res.outline))
+                .catch((err) => setError(err instanceof Error ? err.message : 'Outline failed'))
+                .finally(() => setBusy(false));
+            }}
+          >
+            Generate outline
+          </button>
+          <button
+            type="button"
+            disabled={busy || !prompt.trim() || sections.length === 0}
+            className="bg-primary-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
+            onClick={() => {
+              if (!paperId) return;
+              setBusy(true);
+              setError(null);
+              void papersApi
+                .generate(paperId, {
+                  paper_type: paperType,
+                  sections,
+                  research_prompt: prompt,
+                  citation_style: citationStyle,
+                  output_format: outputFormat,
+                })
+                .then((res) => {
+                  setDraft(res.paper.content);
+                  setWarnings(res.warnings || []);
+                  setDisclaimer(res.disclaimer);
+                  setPaper((prev) => (prev ? { ...prev, ...res.paper } : prev));
+                })
+                .catch((err) => setError(err instanceof Error ? err.message : 'Generate failed'))
+                .finally(() => setBusy(false));
+            }}
+          >
+            Generate draft
+          </button>
+        </div>
       </div>
+      {outline ? (
+        <div className="bg-white rounded shadow p-6">
+          <h2 className="font-medium mb-2">Outline</h2>
+          <pre className="text-sm whitespace-pre-wrap font-sans">{outline}</pre>
+        </div>
+      ) : null}
+      {draft ? (
+        <div className="bg-white rounded shadow p-6 space-y-3">
+          <h2 className="font-medium">Draft</h2>
+          {warnings.map((w) => (
+            <p key={w.message} className="text-sm text-amber-700">
+              ⚠ {w.message}
+            </p>
+          ))}
+          <pre className="text-sm whitespace-pre-wrap font-sans">{draft}</pre>
+          {disclaimer ? <p className="text-xs text-gray-500">{disclaimer}</p> : null}
+        </div>
+      ) : null}
       {pins.length ? (
         <div className="bg-white rounded shadow p-6">
           <h2 className="font-medium mb-3">Pinned ({pins.length})</h2>

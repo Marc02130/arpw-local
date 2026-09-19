@@ -230,6 +230,29 @@ export const papersApi = {
       method: 'POST',
       body: JSON.stringify({ question, sources }),
     }),
+  outline: (id: string, body: { paper_type: string; sections: string[]; research_prompt: string }) =>
+    request<{ outline: string }>(`/papers/${id}/outline`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  generate: (
+    id: string,
+    body: {
+      paper_type: string;
+      sections: string[];
+      research_prompt: string;
+      citation_style?: string;
+      output_format?: string;
+    },
+  ) =>
+    request<{
+      paper: Paper;
+      sections: Array<{ name: string; text: string }>;
+      warnings: Array<{ kind: string; message: string }>;
+      disclaimer: string;
+      citation_check: { ok: boolean };
+      format_check: { ok: boolean };
+    }>(`/papers/${id}/generate`, { method: 'POST', body: JSON.stringify(body) }),
 };
 
 export const documentsApi = {

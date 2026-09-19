@@ -190,6 +190,14 @@ def get_section_template(paper_type: str, section: str) -> SectionTemplate:
     return SectionTemplate(query, instructions, role_for(paper_type, section))
 
 
+def build_generation_prompt(paper_type: str, section: str, research_prompt: str) -> str:
+    template = get_section_template(paper_type, section)
+    topic = research_prompt.strip()
+    if topic:
+        return f"{template.instructions}\n\nResearch prompt:\n{topic}"
+    return template.instructions
+
+
 def build_retrieval_query(paper_type: str, section: str, research_prompt: str) -> str:
     template = get_section_template(paper_type, section)
     topic = research_prompt.strip()
