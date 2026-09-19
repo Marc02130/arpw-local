@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     ANTHROPIC_CHAT_MODEL: str = "claude-sonnet-4-5"
     ANTHROPIC_API_URL: str = "https://api.anthropic.com/v1/messages"
     ANTHROPIC_VERSION: str = "2023-06-01"
+    CHAT_TIMEOUT_SECONDS: int = 120
+    CHAT_MAX_TOKENS: int = 4096
+    CHAT_TEMPERATURE: float = 0.2
     MAX_FILE_SIZE: int = 10_485_760
     MAX_UPLOAD_BODY_BYTES: int = 12_582_912
     LITERATURE_FILE_CAP: int = 500

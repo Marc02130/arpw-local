@@ -81,9 +81,15 @@ export const Generate: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto p-8 space-y-6">
-      <p className="text-sm">
+      <p className="text-sm flex flex-wrap items-center">
         <Link className="text-primary-600" to="/dashboard">
           ← Dashboard
+        </Link>
+        <span className="mx-2 text-gray-400">·</span>
+        <span className="font-medium">Prompt</span>
+        <span className="mx-2 text-gray-400">·</span>
+        <Link className="text-primary-600" to={`/generate/${paperId}/interrogate`}>
+          Interrogate
         </Link>
       </p>
       <div className="bg-white rounded shadow p-6 space-y-4">

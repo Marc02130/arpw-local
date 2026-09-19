@@ -187,3 +187,93 @@ def retrieve_for_query_sources(
             if len(merged) >= MATCH_COUNT:
                 return merged
     return merged
+
+
+def _match_examples(
+    session: Session,
+    user_id: UUID,
+    query: str,
+    k: int,
+) -> list[Passage]:
+    vectors = embeddings_service.embed_texts([query])
+    if not vectors:
+        return []
+    rows = session.execute(
+        text(
+            """
+            SELECT vector_id, file_id, chunk_text, section, score, page
+            FROM match_example_chunks(
+              CAST(:emb AS vector),
+              :k,
+              :filter_user,
+              :prefer_section,
+              :filter_model,
+              :query_text
+            )
+            """
+        ),
+        {
+            "emb": _vector_literal(vectors[0]),
+            "k": k,
+            "filter_user": str(user_id),
+            "prefer_section": None,
+            "filter_model": settings.EMBEDDING_MODEL or MINILM,
+            "query_text": query,
+        },
+    ).mappings()
+    out: list[Passage] = []
+    for row in rows:
+        role = classify.classify_chunk(row["chunk_text"] or "", row["section"] or "")
+        if role in classify.EXCLUDE_DEFAULT:
+            continue
+        out.append(
+            Passage(
+                vector_id=row["vector_id"],
+                file_id=row["file_id"],
+                chunk_text=row["chunk_text"],
+                section=row["section"],
+                source_role="example",
+                score=float(row["score"] or 0),
+                page=row["page"],
+                chunk_role=role,
+            )
+        )
+    return out
+
+
+def retrieve_for_interrogate(
+    session: Session,
+    user_id: UUID,
+    question: str,
+    sources: list[str],
+) -> list[Passage]:
+    wanted = [s for s in sources if s in ("literature", "primary", "examples")]
+    if not wanted:
+        wanted = ["literature"]
+    lit_only = wanted == ["literature"]
+    lit_k = 20 if lit_only else 16
+    other_k = 20 if "literature" not in wanted else 4
+    buckets: list[Passage] = []
+    rest: list[Passage] = []
+    if "literature" in wanted:
+        buckets.extend(_match(session, user_id, question, "literature", None, lit_k))
+    if "primary" in wanted:
+        rest.extend(_match(session, user_id, question, "primary", None, other_k))
+    if "examples" in wanted:
+        rest.extend(_match_examples(session, user_id, question, other_k))
+    rest.sort(key=lambda p: p.score, reverse=True)
+    seen: set[UUID] = set()
+    merged: list[Passage] = []
+    for row in [*buckets, *rest]:
+        if row.vector_id in seen:
+            continue
+        seen.add(row.vector_id)
+        merged.append(row)
+        if len(merged) >= MATCH_COUNT:
+            break
+    asks_refs = any(
+        w in question.lower() for w in ("cite", "citation", "reference", "bibliograph")
+    )
+    if not asks_refs:
+        merged = [p for p in merged if p.chunk_role not in ("citation", "boilerplate")]
+    return merged

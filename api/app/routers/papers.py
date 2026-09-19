@@ -301,3 +301,58 @@ def remove_pin(
         pins_service.delete_pin(session, pin_id, user.id, paper.paper_id)
     except PinError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+
+class InterrogateBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    question: str = Field(min_length=1, max_length=8000)
+    sources: list[str] | None = None
+    filter_role: str | None = None
+
+
+@router.get("/{paper_id}/interrogation")
+def get_interrogation(
+    paper: UserPaper = Depends(get_owned_paper),
+    session: Session = Depends(get_db),
+    user: User = Depends(get_confirmed_user),
+) -> list[dict]:
+    from app.services import interrogate as interrogate_service
+
+    turns = interrogate_service.list_turns(session, paper.paper_id, user.id)
+    return [
+        {
+            "turn_id": str(t.turn_id),
+            "role": t.role,
+            "content": t.content,
+            "sources": t.sources,
+            "passages": t.passages,
+            "created_at": t.created_at.isoformat(),
+        }
+        for t in turns
+    ]
+
+
+@router.post("/{paper_id}/interrogation")
+def post_interrogation(
+    body: InterrogateBody,
+    paper: UserPaper = Depends(get_owned_paper),
+    session: Session = Depends(get_db),
+    user: User = Depends(get_confirmed_user),
+) -> dict:
+    from app.services import interrogate as interrogate_service
+    from app.services.chat import MissingLlmKey
+
+    sources = interrogate_service.parse_sources(body.model_dump())
+    try:
+        return interrogate_service.interrogate(
+            session, user, paper.paper_id, body.question, sources
+        )
+    except MissingLlmKey as exc:
+        raise HTTPException(
+            status_code=400, detail={"code": exc.code, "detail": str(exc)}
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except TimeoutError as exc:
+        raise HTTPException(status_code=504, detail=str(exc)) from exc

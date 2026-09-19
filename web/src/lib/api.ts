@@ -221,6 +221,15 @@ export const papersApi = {
   pin: (id: string, body: { vector_id: string; file_id: string; target_section?: string | null }) =>
     request<Pin>(`/papers/${id}/pins`, { method: 'POST', body: JSON.stringify(body) }),
   unpin: (id: string, pinId: string) => request<void>(`/papers/${id}/pins/${pinId}`, { method: 'DELETE' }),
+  interrogation: (id: string) =>
+    request<Array<{ turn_id: string; role: string; content: string; passages: Passage[]; created_at: string }>>(
+      `/papers/${id}/interrogation`,
+    ),
+  ask: (id: string, question: string, sources: string[]) =>
+    request<{ answer: string; passages: Passage[]; sources: string[] }>(`/papers/${id}/interrogation`, {
+      method: 'POST',
+      body: JSON.stringify({ question, sources }),
+    }),
 };
 
 export const documentsApi = {
