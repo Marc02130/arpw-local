@@ -66,7 +66,7 @@ PR 09 does **not** depend on PR 08: generate does not read interrogation notes. 
 ## PR 05 — Upload / ingest core
 
 - **Title:** `slice05: Per-file reference/example upload with MiniLM ingest`
-- **Files:** `services/{files,extract,chunk,classify,embeddings}.py`, `routers/documents.py`, UploadZone/DocumentList (one POST per file, in-flight concurrency 2), `tests/fixtures/nfr7.pdf`, ingest unit/uat
+- **Files:** `services/{files,extract,chunk,classify,embeddings}.py`, `routers/documents.py`, UploadZone/DocumentList (one POST per file, drop batch 10), `tests/fixtures/nfr7.pdf`, ingest unit/uat
 - **Depends on:** PR 03 (confirmed user)
 - **Description:** One-file POST; RAGged `_ingest_one` internally; ARPW types/caps/`count(*)` all statuses/roles/IMRaD/`chunk_role`. Stored `embedding_model` always `sentence-transformers/all-MiniLM-L6-v2` (stub writes the same string). Stale timeout. Delete unlinks volume. NFR-4 < 120s on fixture. Always 201 with `status`/`error_message` (no all-failed 422). **No** bibliographic lookup yet (PR 10). Body/timeout numbers from Configuration, not PR 12.
 

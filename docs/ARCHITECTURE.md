@@ -575,7 +575,7 @@ arpw-local **keeps that transport**:
 
 - `POST /api/references` and `POST /api/examples` accept **exactly one** multipart file (`file`, not `files[]`). Optional form field `source_role` (references only, default `literature`).
 - Client still validates the drop (types, 10 MB, batch ≤ 10, cap vs `count(*)` of existing rows) then fires up to 10 POSTs.
-- **In-flight concurrency = 2** (match uvicorn `--workers 2`). A 10-file drop queues the rest. If all 10 POSTs started at once, queued requests would burn `proxy_read_timeout 600s` while waiting on two workers (5 × 120s NFR-4 ≈ 600s). Concurrency 2 keeps each request under 600s.
+- **In-flight concurrency = 10** (same as a drop batch). ARPW `Promise.all`s the batch; there is no 2-file product cap. uvicorn still has 2 workers — extra POSTs wait in nginx, which is acceptable for a 10-file drop.
 - Each POST runs RAGged `_ingest_one` internally: validate → write volume → row `processing` → extract/chunk/embed → `ready`/`failed`. The 201 returns **after** that file is `ready` or `failed`, so the SPA can set that row to 100% / error. Polling `GET` is not required for progress; the in-flight request *is* the progress interval (80% when the POST starts, 100% on 201).
 - Always **201** with one `ReferenceOut` / `ExampleOut` including `status` / `error_message`, even when ingest failed. 413/415 only if the request never wrote (oversize, empty, unsupported type). **Do not** copy RAGged `upload_documents` all-failed **422**.
 - nginx `client_max_body_size 55m`; API `MAX_FILE_SIZE=10485760`; `MAX_UPLOAD_BODY_BYTES=12582912` (12 MiB, one file + multipart overhead). A 56 MB POST **must** 413. A 10-file × 10 MB drop is **ten** POSTs, not one body.

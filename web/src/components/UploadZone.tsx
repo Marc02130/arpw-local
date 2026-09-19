@@ -4,7 +4,7 @@ import { documentsApi, type SourceRole } from '../lib/api';
 const ACCEPTED = '.pdf,.docx,.txt';
 const MAX_BYTES = 10 * 1024 * 1024;
 const BATCH = 10;
-const CONCURRENCY = 2;
+const CONCURRENCY = 10;
 
 type Kind = 'literature' | 'primary' | 'example';
 
@@ -105,7 +105,7 @@ export const UploadZone: React.FC<Props> = ({ kind, existingCount, cap, onChange
           if (e.dataTransfer.files) void run(e.dataTransfer.files);
         }}
       >
-        Drop pdf/docx/txt (max 10 MB). Up to {BATCH} files; {CONCURRENCY} upload at a time.
+        Drop pdf/docx/txt (max 10 MB each). Up to {BATCH} files per drop.
       </button>
       {error ? <p className="text-sm text-red-600 mt-2">{error}</p> : null}
       {progress.length ? (

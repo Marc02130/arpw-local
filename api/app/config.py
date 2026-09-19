@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     REFERENCE_FILE_CAP: int = 500
     EXAMPLE_FILE_CAP: int = 10
     UPLOAD_BATCH_SIZE: int = 10
-    SPA_UPLOAD_CONCURRENCY: int = 2
+    SPA_UPLOAD_CONCURRENCY: int = 10
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
     MIN_CHUNK_CHARS: int = 50
