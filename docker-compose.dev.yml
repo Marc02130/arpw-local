@@ -1,0 +1,6 @@
+# Overlay for host webpack-dev-server (browser :3000 → proxy → api:8001).
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+services:
+  api:
+    ports:
+      - "8001:8000"
