@@ -29,6 +29,8 @@ services:
       UPLOAD_ROOT: /data/uploads
       SMTP_HOST: mail
       SMTP_PORT: 1025
+      PUBLIC_APP_URL: http://localhost:8082
+      PUBLIC_ORIGINS: http://localhost:8082,http://localhost:3001
     volumes:
       - uploads:/data/uploads
     depends_on:

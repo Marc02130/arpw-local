@@ -49,6 +49,7 @@ def test_default_compose_publishes_8082_and_mailpit() -> None:
     assert services["mail"]["ports"] == ["8026:8025"]
     assert services["api"]["environment"]["SMTP_HOST"] == "mail"
     assert str(services["api"]["environment"]["SMTP_PORT"]) == "1025"
+    assert services["api"]["environment"]["PUBLIC_APP_URL"] == "http://localhost:8082"
     assert "ports" not in services["api"]
     assert "ports" not in services["db"]
 

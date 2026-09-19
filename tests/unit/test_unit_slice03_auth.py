@@ -74,6 +74,8 @@ def test_register_does_not_set_cookie(client, monkeypatch) -> None:
     cookie = response.headers.get("set-cookie", "")
     assert "arpw_session=" not in cookie
     assert captured["subject"] == "Confirm Your Email"
+    assert "http://localhost:8082/api/auth/confirm?token=" in captured["body"]
+    assert "http://localhost:8080/" not in captured["body"]
     me = client.get("/api/auth/me")
     assert me.status_code == 401
 
