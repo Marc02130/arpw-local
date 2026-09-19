@@ -71,3 +71,21 @@ def down() -> None:
 
 def keep_compose() -> bool:
     return os.environ.get("ARPW_KEEP_COMPOSE") == "1"
+
+
+def psql(sql: str) -> str:
+    result = compose(
+        "exec",
+        "-T",
+        "db",
+        "psql",
+        "-U",
+        os.environ.get("POSTGRES_USER", "arpw"),
+        "-d",
+        os.environ.get("POSTGRES_DB", "arpw"),
+        "-c",
+        sql,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stdout + result.stderr)
+    return result.stdout

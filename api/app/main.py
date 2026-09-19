@@ -1,4 +1,7 @@
 from fastapi import APIRouter, FastAPI
+from sqlalchemy import text
+
+from app import db
 
 app = FastAPI(title="arpw-local")
 api = APIRouter(prefix="/api")
@@ -12,7 +15,9 @@ async def health() -> dict[str, str]:
 
 @api.get("/ready")
 def ready() -> dict[str, str]:
-    """Readiness. Slice 01 stub; PR 02 adds SELECT 1 against Postgres."""
+    """Readiness. Sync SELECT 1 against Postgres."""
+    with db.SessionLocal() as session:
+        session.execute(text("SELECT 1"))
     return {"status": "ok"}
 
 

@@ -35,11 +35,12 @@ def test_health_returns_ok() -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_ready_returns_ok() -> None:
-    client = TestClient(app)
-    response = client.get("/api/ready")
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+def test_ready_is_sync_select_one() -> None:
+    from app.main import ready
+
+    assert not inspect.iscoroutinefunction(ready)
+    source = inspect.getsource(ready)
+    assert "SELECT 1" in source
 
 
 def test_default_compose_publishes_only_8080_and_mailpit() -> None:
