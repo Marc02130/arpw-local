@@ -82,3 +82,15 @@ def postgres_url() -> Iterator[str]:
         os.environ["DATABASE_URL"] = url
         _alembic_upgrade(url)
         yield url
+
+
+@pytest.fixture
+def client(postgres_url: str):
+    from fastapi.testclient import TestClient
+
+    from app import db
+    from app.main import app
+
+    db.configure_engine(postgres_url)
+    with TestClient(app) as test_client:
+        yield test_client

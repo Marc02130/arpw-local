@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     SMTP_HOST: str = "host.docker.internal"
     SMTP_PORT: int = 54325
     SMTP_FROM: str = "noreply@localhost"
+    EMAIL_TOKEN_TTL_SECONDS: int = 3600
+    AUTH_EMAIL_RATE_PER_HOUR: int = 30
     BCRYPT_ROUNDS: int = 12
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 5

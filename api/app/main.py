@@ -2,9 +2,26 @@ from fastapi import APIRouter, FastAPI
 from sqlalchemy import text
 
 from app import db
+from app.config import settings
+from app.origin import OriginAllowlistMiddleware
+from app.routers.auth import router as auth_router
 
 app = FastAPI(title="arpw-local")
+app.add_middleware(OriginAllowlistMiddleware)
+
+if settings.cors_origin_list:
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origin_list,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type"],
+    )
+
 api = APIRouter(prefix="/api")
+api.include_router(auth_router)
 
 
 @api.get("/health")
