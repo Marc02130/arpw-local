@@ -15,7 +15,7 @@ pytestmark = [
 ]
 
 
-def test_api_health_is_proxied_on_8080(compose_stack: str) -> None:
+def test_api_health_is_proxied_on_8082(compose_stack: str) -> None:
     response = httpx.get(f"{compose_stack}/api/health", timeout=5.0)
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
@@ -37,7 +37,7 @@ def test_bare_api_path_redirects_to_slash(compose_stack: str) -> None:
 
 def test_default_compose_does_not_publish_8000(compose_stack: str) -> None:
     ports = compose_support.published_ports()
-    assert "8080" in ports
+    assert "8082" in ports
     assert "0.0.0.0:8000" not in ports
     assert ":::8000" not in ports
 

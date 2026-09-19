@@ -33,15 +33,15 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open **http://localhost:8080/**. Health: `GET http://localhost:8080/api/health` → `{"status":"ok"}`.
+Open **http://localhost:8082/**. Health: `GET http://localhost:8082/api/health` → `{"status":"ok"}`.
 
 ### Step 2: Sign up and confirm
 
 1. Create an account (password at least 6 characters).
-2. Open Mailpit at [http://localhost:8025](http://localhost:8025).
+2. Open the shared mailbox at [http://127.0.0.1:54324](http://127.0.0.1:54324) (ARPW’s Mailpit/Inbucket).
 3. Follow the confirm link. You land on sign-in; then the dashboard.
 
-Do not mix `localhost` and `127.0.0.1` for confirm links. Use `http://localhost:8080` consistently.
+Do not mix `localhost` and `127.0.0.1` for confirm links. Use `http://localhost:8082` consistently.
 
 ### What you will have (once implemented)
 
@@ -51,10 +51,10 @@ A confirmed user, an `arpw_session` cookie, and access to `/dashboard`, `/genera
 
 | What | Where |
 |---|---|
-| App (nginx → SPA + `/api`) | `http://localhost:8080/` |
-| Mailpit UI | `http://localhost:8025/` |
-| Mailpit SMTP | container `:1025` (not on the host by default) |
-| Dev overlay API (optional) | host `:8001` + webpack `:3000` — dogfood generate on **:8080**, not :3000 |
+| App (nginx → SPA + `/api`) | `http://localhost:8082/` (RAGged keeps `:8080`) |
+| Mail UI (shared with ARPW) | `http://127.0.0.1:54324/` |
+| Mail SMTP | host `:54325` (`host.docker.internal` from the API container) |
+| Dev overlay API (optional) | host `:8002` + webpack `:3001` — dogfood generate on **:8082**, not :3001 |
 
 Compose builds `DATABASE_URL` from `POSTGRES_*`. Do not set `DATABASE_URL` or `VITE_*`.
 
@@ -63,8 +63,9 @@ Compose builds `DATABASE_URL` from `POSTGRES_*`. Do not set `DATABASE_URL` or `V
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | Database; Compose interpolates these into `DATABASE_URL` |
 | `JWT_SECRET` | ≥ 32 characters; also wraps Fernet for pasted LLM keys |
 | `COOKIE_SECURE` | `false` on HTTP |
-| `PUBLIC_ORIGINS` | CSRF Origin allowlist (`http://localhost:8080,http://localhost:3000`) |
-| `PUBLIC_APP_URL` | Confirm/reset link base (`http://localhost:8080`) |
+| `PUBLIC_ORIGINS` | CSRF Origin allowlist (`http://localhost:8082,http://localhost:3001`) |
+| `PUBLIC_APP_URL` | Confirm/reset link base (`http://localhost:8082`) |
+| `SMTP_HOST` / `SMTP_PORT` | Shared mailbox (`host.docker.internal` / `54325`) |
 | `EMBEDDING_PROVIDER` | `local` (default) or `stub` (tests). Stored model id is always `sentence-transformers/all-MiniLM-L6-v2` |
 
 There are **no** chat API keys in `.env`. Paste OpenAI, xAI, and/or Anthropic keys on Profile. Interrogate, outline, and generate all use the same selected Chat provider.

@@ -11,7 +11,7 @@ import httpx
 
 from tests.paths import ENV_EXAMPLE, ROOT
 
-BASE_URL = "http://127.0.0.1:8080"
+BASE_URL = "http://127.0.0.1:8082"
 
 
 def docker_available() -> bool:

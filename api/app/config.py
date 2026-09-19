@@ -12,9 +12,9 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = False
     COOKIE_SAMESITE: str = "lax"
     COOKIE_PATH: str = "/"
-    PUBLIC_ORIGINS: str = "http://localhost:8080,http://localhost:3000"
+    PUBLIC_ORIGINS: str = "http://localhost:8082,http://localhost:3001"
     CORS_ORIGINS: str = ""
-    PUBLIC_APP_URL: str = "http://localhost:8080"
+    PUBLIC_APP_URL: str = "http://localhost:8082"
     EMBEDDING_PROVIDER: str = "local"
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     EMBEDDING_DIM: int = 384
@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     EXAMPLE_FILE_CAP: int = 10
     UPLOAD_BATCH_SIZE: int = 10
     UPLOAD_ROOT: str = "/data/uploads"
-    SMTP_HOST: str = "mail"
-    SMTP_PORT: int = 1025
+    SMTP_HOST: str = "host.docker.internal"
+    SMTP_PORT: int = 54325
     SMTP_FROM: str = "noreply@localhost"
     BCRYPT_ROUNDS: int = 12
     DB_POOL_SIZE: int = 5

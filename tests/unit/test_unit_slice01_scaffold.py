@@ -43,10 +43,10 @@ def test_ready_is_sync_select_one() -> None:
     assert "SELECT 1" in source
 
 
-def test_default_compose_publishes_only_8080_and_mailpit() -> None:
+def test_default_compose_publishes_only_8082() -> None:
     services = _compose()["services"]
-    assert services["web"]["ports"] == ["8080:80"]
-    assert services["mail"]["ports"] == ["8025:8025"]
+    assert services["web"]["ports"] == ["8082:80"]
+    assert "mail" not in services
     assert "ports" not in services["api"]
     assert "ports" not in services["db"]
 
@@ -77,10 +77,10 @@ def test_web_waits_for_api_healthy() -> None:
     assert depends["api"]["condition"] == "service_healthy"
 
 
-def test_dev_overlay_only_publishes_api_8001() -> None:
+def test_dev_overlay_only_publishes_api_8002() -> None:
     data = yaml.safe_load(COMPOSE_DEV.read_text())
     assert list(data["services"]) == ["api"]
-    assert data["services"]["api"] == {"ports": ["8001:8000"]}
+    assert data["services"]["api"] == {"ports": ["8002:8000"]}
 
 
 def test_nginx_body_timeout_and_forwarded_headers() -> None:
@@ -97,7 +97,8 @@ def test_nginx_body_timeout_and_forwarded_headers() -> None:
 
 def test_env_example_has_required_keys_and_no_chat_secrets() -> None:
     text = ENV_EXAMPLE.read_text()
-    assert "PUBLIC_ORIGINS=http://localhost:8080,http://localhost:3000" in text
+    assert "PUBLIC_ORIGINS=http://localhost:8082,http://localhost:3001" in text
+    assert "SMTP_PORT=54325" in text
     assert "JWT_SECRET=" in text
     assert "COOKIE_SECURE=" in text
     assert "POSTGRES_USER=" in text
