@@ -62,11 +62,20 @@ class ReferencePatch(BaseModel):
 
 def _cap_message(exc: IntegrityError) -> str | None:
     raw = str(getattr(exc, "orig", exc))
-    if "Reference cap of 10 files reached" in raw:
-        return "Reference cap of 10 files reached"
-    if "Example cap of 10 files reached" in raw:
-        return "Example cap of 10 files reached"
+    for message in (
+        "Literature cap of 500 files reached",
+        "Original research cap of 100 files reached",
+        "Example cap of 10 files reached",
+    ):
+        if message in raw:
+            return message
     return None
+
+
+def _role_cap(source_role: str) -> tuple[int, str]:
+    if source_role == "primary":
+        return settings.PRIMARY_FILE_CAP, "Original research cap of 100 files reached"
+    return settings.LITERATURE_FILE_CAP, "Literature cap of 500 files reached"
 
 
 def _read_one_file(request: Request, upload: UploadFile) -> tuple[str, bytes, str]:
@@ -115,11 +124,14 @@ def upload_reference(
         raise HTTPException(status_code=422, detail="source_role must be literature or primary")
     name, data, kind = _read_one_file(request, file)
     session.execute(select(User).where(User.id == user.id).with_for_update())
+    cap, cap_detail = _role_cap(source_role)
     count = session.scalar(
-        select(func.count()).select_from(Reference).where(Reference.user_id == user.id)
+        select(func.count())
+        .select_from(Reference)
+        .where(Reference.user_id == user.id, Reference.source_role == source_role)
     ) or 0
-    if count >= settings.REFERENCE_FILE_CAP:
-        raise HTTPException(status_code=413, detail="Reference cap of 10 files reached")
+    if count >= cap:
+        raise HTTPException(status_code=413, detail=cap_detail)
     file_id = uuid4()
     relative = files_service.new_relative_path(user.id, file_id, kind)
     files_service.write_bytes(relative, data)
@@ -161,6 +173,19 @@ def patch_reference(
     if body.source_role is not None:
         if body.source_role not in ("literature", "primary"):
             raise HTTPException(status_code=422, detail="source_role must be literature or primary")
+        if body.source_role != doc.source_role:
+            cap, cap_detail = _role_cap(body.source_role)
+            count = session.scalar(
+                select(func.count())
+                .select_from(Reference)
+                .where(
+                    Reference.user_id == user.id,
+                    Reference.source_role == body.source_role,
+                    Reference.file_id != doc.file_id,
+                )
+            ) or 0
+            if count >= cap:
+                raise HTTPException(status_code=413, detail=cap_detail)
         doc.source_role = body.source_role
     if body.citation_text is not None:
         doc.citation_text = body.citation_text

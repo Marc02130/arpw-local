@@ -26,7 +26,8 @@ class Settings(BaseSettings):
     ANTHROPIC_VERSION: str = "2023-06-01"
     MAX_FILE_SIZE: int = 10_485_760
     MAX_UPLOAD_BODY_BYTES: int = 12_582_912
-    REFERENCE_FILE_CAP: int = 10
+    LITERATURE_FILE_CAP: int = 500
+    PRIMARY_FILE_CAP: int = 100
     EXAMPLE_FILE_CAP: int = 10
     UPLOAD_BATCH_SIZE: int = 10
     SPA_UPLOAD_CONCURRENCY: int = 10

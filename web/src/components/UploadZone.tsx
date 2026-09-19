@@ -44,7 +44,9 @@ export const UploadZone: React.FC<Props> = ({ kind, existingCount, cap, onChange
         setError(
           kind === 'example'
             ? 'Example cap of 10 files reached'
-            : 'Reference cap of 10 files reached',
+            : kind === 'primary'
+              ? 'Original research cap of 100 files reached'
+              : 'Literature cap of 500 files reached',
         );
         return;
       }
@@ -105,7 +107,7 @@ export const UploadZone: React.FC<Props> = ({ kind, existingCount, cap, onChange
           if (e.dataTransfer.files) void run(e.dataTransfer.files);
         }}
       >
-        Drop pdf/docx/txt (max 10 MB each). At most {DROP_LIMIT} files per drop; library cap {cap}.
+        Drop pdf/docx/txt (max 10 MB each). At most {DROP_LIMIT} files per drop. Library holds up to {cap}.
       </button>
       {error ? <p className="text-sm text-red-600 mt-2">{error}</p> : null}
       {progress.length ? (

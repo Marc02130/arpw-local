@@ -20,7 +20,8 @@ def test_documents_router_is_one_file_post() -> None:
     assert 'File(...)' in text
     assert "files: list" not in text
     assert "all(row.status == \"failed\"" not in text
-    assert "Reference cap of 10 files reached" in text
+    assert "Literature cap of 500 files reached" in text
+    assert "Original research cap of 100 files reached" in text
 
 
 def _upload_txt(client, name: str, body: str, source_role: str = "literature"):

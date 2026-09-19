@@ -562,7 +562,7 @@ UAT assertion (PR 09): `nginx.conf` generate block contains both `proxy_pass htt
 |---|---|
 | Types | `.pdf`, `.docx`, `.txt` only (not `.doc`, not RAGged’s `.rtf`) |
 | Size | `0 < size <= 10_485_760` |
-| Reference cap | 10 rows per user (`"references"`), literature + primary share it (RAGged-scale; 20-file drops failed) |
+| Library totals | literature 500, primary 100, examples 10 (separate). Per-drop upload batch 10 (20-file drops failed). |
 | Example cap | 10 rows per user |
 | Per drop | at most 10 files (`UPLOAD_BATCH_SIZE`) |
 | Roles | references: `source_role` `literature` (default) \| `primary`; examples have no role |
