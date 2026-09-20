@@ -72,6 +72,7 @@ pytest -m uat          # Compose
 pytest -m dogfood      # live walkthrough (skips without operator flag)
 cd web && npm test     # Jest
 ./scripts/smoke.sh     # health → confirm → upload → retrieve (exit 2 without xai- key)
+./scripts/dogfood.sh    # live key required: retrieve → pin → interrogate → outline → generate
 ```
 
 Literature-review UAT: [`UAT/README.md`](UAT/README.md). Waits are **not** ARPW’s 180s/300s. Run against **`:8082`**, not webpack `:3001`.

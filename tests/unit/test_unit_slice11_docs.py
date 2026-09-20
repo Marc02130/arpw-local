@@ -7,6 +7,17 @@ from tests.paths import ROOT, SMOKE
 pytestmark = [pytest.mark.unit, pytest.mark.slice11]
 
 
+def test_dogfood_script_walks_generate() -> None:
+    text = (ROOT / "scripts" / "dogfood.py").read_text()
+    assert "8082" in text
+    assert "Literature Review" in text
+    assert "nfr7probe" in text
+    assert "DOGFOOD_XAI_KEY" in text
+    assert "OPENAI_API_KEY" not in text
+    assert "/papers/" in text
+    assert "2100" in text
+
+
 def test_smoke_script_and_ports() -> None:
     text = SMOKE.read_text()
     assert "8082" in text
