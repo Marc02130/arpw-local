@@ -389,7 +389,7 @@ sequenceDiagram
 | `POST /api/auth/forgot-password` | `{email}`. Always 200 `"If an account exists for … a reset link is on its way."` Send reset mail only for **confirmed** users. Link: `{PUBLIC_APP_URL}/reset-password?token=...`. |
 | `POST /api/auth/reset-password` | `{token, password}`. One-shot. Sets password, marks token used, **sets session cookie**. SPA goes to `/dashboard`. Invalid/expired/used → 400 `"This reset link is invalid or has expired"`. |
 
-`PUBLIC_APP_URL` default `http://localhost:8082` (used in mail links). CSRF: copy `ragged/api/app/origin.py` as-is. Mutating requests with a **present** `Origin` not in `PUBLIC_ORIGINS` → 403. **Missing Origin is allowed** (curl, Compose tests, operators). Exempt only `POST /api/auth/login` and `POST /api/auth/register` (RAGged). Do **not** special-case forgot/reset — the SPA on `:8082`/`:3001` sends an allowed Origin; Mailpit does not POST those paths. Confirm is GET (no CSRF). SameSite=lax mitigates cross-site cookie POSTs.
+`PUBLIC_APP_URL` default `http://localhost:8082` (used in mail links). CSRF: copy `ragged/api/app/origin.py` as-is. Mutating requests with a **present** `Origin` not in `PUBLIC_ORIGINS` → 403. `localhost` and `127.0.0.1` are distinct origins; default `PUBLIC_ORIGINS` lists `http://localhost:8082` (and `:3001`), not `http://127.0.0.1:8082`. Operator scripts that send `Origin` (`dogfood.py`) must use `DOGFOOD_BASE_URL=http://localhost:8082` or extend the allowlist. **Missing Origin is allowed** (curl, Compose tests). Exempt only `POST /api/auth/login` and `POST /api/auth/register` (RAGged). Do **not** special-case forgot/reset — the SPA on `:8082`/`:3001` sends an allowed Origin; Mailpit does not POST those paths. Confirm is GET (no CSRF). SameSite=lax mitigates cross-site cookie POSTs.
 
 **ResetPassword is not a port of `arpw/src/components/ResetPassword.tsx`.** Live ARPW uses GoTrue `PASSWORD_RECOVERY` + `updatePassword()` with **no query token**. arpw-local:
 
@@ -1095,7 +1095,8 @@ Greenfield repo. No production users.
 | `pytest -m uat` | Compose stack (`compose_support.up`). Auth confirm via mailbox or test confirm helper. Upload fixture PDF. Retrieve `nfr7probe`. Caps. Isolation. Missing Grok key. |
 | `pytest -m dogfood` | Live walkthrough against `:8082` when an operator key is present; skip otherwise. |
 | `cd web && npm test` | Jest: validateAuth, fileCap, uploadProgress, sourceRole, keyboardFlows, draftPreview, exportPaper, library pagination. |
-| `./scripts/smoke.sh` | health → register → confirm (Mailpit API) → login → paper → upload fixture → retrieve hit. Chat/generate skipped without live `xai-` (exit 2, CI skips). |
+| `./scripts/smoke.sh` | health → register → confirm (Mailpit API) → login → paper → upload fixture → retrieve hit. Chat/generate skipped without live `xai-` (exit 2, CI skips). Set `SMOKE_BASE_URL=http://localhost:8082` (not `127.0.0.1`) so Origin matches `PUBLIC_ORIGINS`. |
+| `./scripts/dogfood.sh` | Live signup → key → retrieve → pin → interrogate → outline → generate. Set `DOGFOOD_BASE_URL=http://localhost:8082`; the script’s `Origin` header is the base URL, so `127.0.0.1` → 403 Invalid origin. |
 | `UAT/run-literature-review.mjs` | Playwright vs nginx `:8082` (not webpack `:3001`). Port ARPW steps 1–13 **with new waits** (do not copy ARPW’s 180s upload / 300s generate as constants). Fail if no `xai-` fixture, if citations are not from the uploaded set, if Interrogate evidence is bibliography-only, if Continue restores the wrong paper type. Uncited ⚠ do not fail (QUAL-1 leftovers). |
 
 Literature-review waits (PR 11 — the generate **release gate**; a copied ARPW 180s/300s is a false product fail when the live formula is longer):

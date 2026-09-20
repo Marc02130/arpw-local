@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Smoke: health → register → confirm (Mailpit) → login → paper → upload fixture → retrieve.
 # Generate is skipped unless SMOKE_XAI_KEY or UAT/.uat-grok-key is a live xai- secret (exit 2).
+# Prefer SMOKE_BASE_URL=http://localhost:8082 (PUBLIC_ORIGINS lists localhost, not 127.0.0.1).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
