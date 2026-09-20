@@ -52,7 +52,7 @@ cd UAT && npm install && npx playwright install chromium
 node run-literature-review.mjs
 ```
 
-App: [http://localhost:8082](http://localhost:8082). Mailpit: [http://localhost:8026](http://localhost:8026). Do not run this against webpack `:3001`.
+App: [http://localhost:8082](http://localhost:8082). Mailpit: [http://localhost:8026](http://localhost:8026). Do not run this against webpack `:3001`. Operator scripts (`./scripts/dogfood.sh`, `./scripts/smoke.sh`) must set `DOGFOOD_BASE_URL` / `SMOKE_BASE_URL` to **`http://localhost:8082`** (not `127.0.0.1`) unless `PUBLIC_ORIGINS` also lists that origin — otherwise Settings PUT returns **403 Invalid origin**. **Harness-only:** `dogfood.py` UTF-8-decodes `export.docx` and can raise `UnicodeDecodeError` before checking status; product Word export is not implicated. See [`../tests/README.md`](../tests/README.md).
 
 ## How-to: bring the stack up
 

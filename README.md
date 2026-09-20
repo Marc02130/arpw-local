@@ -39,7 +39,7 @@ Open **http://localhost:8082/**. Health: `GET http://localhost:8082/api/health` 
 2. Open Mailpit at [http://localhost:8026](http://localhost:8026).
 3. Follow the confirm link. You land on sign-in; then the dashboard.
 
-Do not mix `localhost` and `127.0.0.1` for confirm links. Use `http://localhost:8082` consistently.
+Do not mix `localhost` and `127.0.0.1` for confirm links **or** CSRF `Origin` headers. Compose `PUBLIC_ORIGINS` allowlists `http://localhost:8082` (and `:3001`), not `http://127.0.0.1:8082`. Use `http://localhost:8082` consistently.
 
 ### What you will have
 
@@ -71,9 +71,13 @@ pytest                 # unit
 pytest -m uat          # Compose
 pytest -m dogfood      # live walkthrough (skips without operator flag)
 cd web && npm test     # Jest
-./scripts/smoke.sh     # health → confirm → upload → retrieve (exit 2 without xai- key)
-./scripts/dogfood.sh    # live key required: retrieve → pin → interrogate → outline → generate
+SMOKE_BASE_URL=http://localhost:8082 ./scripts/smoke.sh
+# health → confirm → upload → retrieve (exit 2 without xai- key)
+DOGFOOD_BASE_URL=http://localhost:8082 ./scripts/dogfood.sh
+# live key required: retrieve → pin → interrogate → outline → generate
 ```
+
+Scripts default `DOGFOOD_BASE_URL` / `SMOKE_BASE_URL` to `http://127.0.0.1:8082`. That host is **not** in `PUBLIC_ORIGINS`. `dogfood.py` sends `Origin` equal to the base URL, so Settings PUT then returns **403 Invalid origin**. Override to **`http://localhost:8082`** unless you also list the `127.0.0.1` origin in `PUBLIC_ORIGINS`.
 
 Literature-review UAT: [`UAT/README.md`](UAT/README.md). Waits are **not** ARPW’s 180s/300s. Run against **`:8082`**, not webpack `:3001`.
 
