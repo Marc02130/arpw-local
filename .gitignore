@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+web/dist/
+web/node_modules/
+
+# Python
+api/.venv/
+.venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+.coverage
+htmlcov/
+*.egg-info/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Logs / tmp
+logs/
+*.log
+tmp/
+temp/
+.cache/
+
+# Uploads (named volume in Compose; local overlay)
+data/uploads/**
+!data/uploads/
+!data/uploads/.gitkeep
+
+# UAT papers (no PII in git)
+UAT/papers/**
+!UAT/papers/
+!UAT/papers/.gitkeep
+UAT/reports/
+UAT/.uat-grok-key
+UAT/node_modules/
+
+# Keep requirements
+!api/requirements.txt
+!api/requirements-dev.txt

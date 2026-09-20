@@ -1,0 +1,7 @@
+# Overlay for host webpack-dev-server (browser :3001 → proxy → api:8002).
+# RAGged already owns :8080 and :8001.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+services:
+  api:
+    ports:
+      - "8002:8000"

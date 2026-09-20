@@ -3,14 +3,14 @@
 | Field | Value |
 |---|---|
 | **Title** | arpw-local slice plan |
-| **Date** | 2026-09-19 |
-| **Status** | Draft |
+| **Date** | 2026-09-20 |
+| **Status** | In progress — slices 01–11 landed on `slice11-docs-uat`; PR 11 (docs/UAT) is open. PR 12 (keyboard) is not started. |
 | **Spec** | [ARCHITECTURE.md](./ARCHITECTURE.md) (behavior, schema, APIs, Key Decisions) |
 | **Intent** | [PRODUCT_REQUIREMENTS.md](./PRODUCT_REQUIREMENTS.md) |
 
 This file is the **order of work**. Architecture is the **what**. Do not duplicate Key Decisions here. If a slice blurb disagrees with D1–D16, D1–D16 wins.
 
-Incremental, independently reviewable. Inspired by RAGged `slice01`…`slice10` but covering ARPW product, not threads. Live code in `~/Code/arpw` and `~/Code/ragged` is the port source — not `ragged/documents/*.md`.
+Incremental, independently reviewable. Inspired by RAGged `slice01`…`slice10` but covering ARPW product, not threads. Live code in `~/Code/arpw` and `~/Code/ragged` is the port source — prefer each repo’s current README/guides over older markdown trees.
 
 ## Order
 
@@ -40,7 +40,7 @@ PR 09 does **not** depend on PR 08: generate does not read interrogation notes. 
 - **Title:** `slice01: Compose scaffold (api/web/db volumes, health)`
 - **Files:** `docker-compose.yml`, `docker-compose.dev.yml`, `api/Dockerfile`, `api/app/main.py` (`/api/health`, `/api/ready`), `api/app/config.py`, `web/Dockerfile`, `web/nginx.conf`, `web` placeholder `index.html`, `.env.example`, `.gitignore`, `pytest.ini`, `tests/unit/test_unit_slice01_scaffold.py`, `tests/uat/test_uat_slice01_scaffold.py`
 - **Depends on:** none
-- **Description:** `docker compose up --build` serves `:8080`. Health JSON (`/api/health` async). Named volumes. nginx `client_max_body_size 55m`; default `proxy_read_timeout 600s`. Config constants `MAX_FILE_SIZE` / `MAX_UPLOAD_BODY_BYTES=12582912`. UAT: a **56 MB** POST 413s; do **not** copy RAGged “55m is the multi-file product limit” tests. Mailpit service (unused until PR 03). No product routes yet. **No chat API keys in `.env.example`.**
+- **Description:** `docker compose up --build` serves `:8082` (RAGged keeps `:8080`). Health JSON (`/api/health` async). Named volumes. nginx `client_max_body_size 55m`; default `proxy_read_timeout 600s`. Config constants `MAX_FILE_SIZE` / `MAX_UPLOAD_BODY_BYTES=12582912`. UAT: a **56 MB** POST 413s; do **not** copy RAGged “55m is the multi-file product limit” tests. Own Mailpit sidecar UI `:8026` (SMTP `mail:1025`, not published). No product routes yet. **No chat API keys in `.env.example`.**
 
 ## PR 02 — Schema
 
@@ -54,7 +54,7 @@ PR 09 does **not** depend on PR 08: generate does not read interrogation notes. 
 - **Title:** `slice03: Cookie JWT, confirmation, password reset`
 - **Files:** `auth_utils.py`, `routers/auth.py`, `mailer.py`, `origin.py`, `deps.py`, `web` Login/VerifyEmail/Forgot + **rewritten** ResetPassword (`?token=` → POST `/api/auth/reset-password`) + AuthContext (`GET /me` only) + router shell, Jest validateAuth, unit/uat auth tests
 - **Depends on:** PR 02
-- **Description:** Register does not set cookie; **409 if email taken** (not a resend). Confirm via Mailpit `:8025`. Invalid confirm → 302 `/verify-email?error=invalid`. Login 403 unconfirmed. Reset one-shot from query token (not GoTrue `isRecovery`). CSRF allowlist (missing Origin allowed; no forgot/reset exempt). Password min 6. Unique `token_hash`; 3600s; resend-only invalidates prior unused confirm tokens in the same transaction. AuthContext does **not** fetch `/settings/llm` yet (PR 04).
+- **Description:** Register does not set cookie; **409 if email taken** (not a resend). Confirm via this stack’s Mailpit `:8026`. Invalid confirm → 302 `/verify-email?error=invalid`. Login 403 unconfirmed. Reset one-shot from query token (not GoTrue `isRecovery`). CSRF allowlist (missing Origin allowed; no forgot/reset exempt). Password min 6. Unique `token_hash`; 3600s; resend-only invalidates prior unused confirm tokens in the same transaction. AuthContext does **not** fetch `/settings/llm` yet (PR 04).
 
 ## PR 04 — Profile + LLM keys
 
@@ -66,7 +66,7 @@ PR 09 does **not** depend on PR 08: generate does not read interrogation notes. 
 ## PR 05 — Upload / ingest core
 
 - **Title:** `slice05: Per-file reference/example upload with MiniLM ingest`
-- **Files:** `services/{files,extract,chunk,classify,embeddings}.py`, `routers/documents.py`, UploadZone/DocumentList (one POST per file, in-flight concurrency 2), `tests/fixtures/nfr7.pdf`, ingest unit/uat
+- **Files:** `services/{files,extract,chunk,classify,embeddings}.py`, `routers/documents.py`, UploadZone/DocumentList (one POST per file, drop batch 10), `tests/fixtures/nfr7.pdf`, ingest unit/uat
 - **Depends on:** PR 03 (confirmed user)
 - **Description:** One-file POST; RAGged `_ingest_one` internally; ARPW types/caps/`count(*)` all statuses/roles/IMRaD/`chunk_role`. Stored `embedding_model` always `sentence-transformers/all-MiniLM-L6-v2` (stub writes the same string). Stale timeout. Delete unlinks volume. NFR-4 < 120s on fixture. Always 201 with `status`/`error_message` (no all-failed 422). **No** bibliographic lookup yet (PR 10). Body/timeout numbers from Configuration, not PR 12.
 
@@ -108,9 +108,9 @@ PR 09 does **not** depend on PR 08: generate does not read interrogation notes. 
 ## PR 11 — Docs + smoke + literature-review UAT
 
 - **Title:** `slice11: README Diataxis, smoke.sh, UAT playbook`
-- **Files:** `README.md`, `docs/*`, `scripts/smoke.sh`, `UAT/README.md` + `UAT/run-literature-review.mjs` pointed at nginx `:8080`, `tests/dogfood/*`
+- **Files:** `README.md`, `docs/*`, `scripts/smoke.sh`, `UAT/README.md` + `UAT/run-literature-review.mjs` pointed at nginx `:8082`, `tests/dogfood/*`
 - **Depends on:** PR 10
-- **Description:** User-facing walkthrough. UAT is the generate dogfood gate (pasted key for the selected `chat_provider`). **Do not copy 180s upload waits or 300s generate wait.** Use `UAT_UPLOAD_WAIT_MS(n)` / `UAT_GENERATE_WAIT_MS=1260000` / outline 180s (Testing in ARCHITECTURE). No PII PDFs committed. Run against `:8080`, not webpack `:3000`.
+- **Description:** User-facing walkthrough. UAT is the generate dogfood gate (pasted key for the selected `chat_provider`). **Do not copy ARPW’s 180s upload waits or 300s generate wait as constants.** Live runner: `UAT_UPLOAD_WAIT_MS(n) = ceil(n/10)*120000+60000` (matches `UploadZone` concurrency 10), `UAT_GENERATE_WAIT_MS=1260000`, outline 180s (Testing in ARCHITECTURE). No PII PDFs committed. Run against `:8082`, not webpack `:3001`.
 
 ## PR 12 — Polish / NFR-6 keyboard
 
