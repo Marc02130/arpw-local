@@ -48,6 +48,9 @@ data/uploads/**
 UAT/papers/**
 !UAT/papers/
 !UAT/papers/.gitkeep
+UAT/reports/
+UAT/.uat-grok-key
+UAT/node_modules/
 
 # Keep requirements
 !api/requirements.txt
