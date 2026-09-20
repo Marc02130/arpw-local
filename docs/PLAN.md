@@ -3,14 +3,14 @@
 | Field | Value |
 |---|---|
 | **Title** | arpw-local slice plan |
-| **Date** | 2026-09-19 |
-| **Status** | Draft |
+| **Date** | 2026-09-20 |
+| **Status** | In progress — slices 01–11 landed on `slice11-docs-uat`; PR 11 (docs/UAT) is open. PR 12 (keyboard) is not started. |
 | **Spec** | [ARCHITECTURE.md](./ARCHITECTURE.md) (behavior, schema, APIs, Key Decisions) |
 | **Intent** | [PRODUCT_REQUIREMENTS.md](./PRODUCT_REQUIREMENTS.md) |
 
 This file is the **order of work**. Architecture is the **what**. Do not duplicate Key Decisions here. If a slice blurb disagrees with D1–D16, D1–D16 wins.
 
-Incremental, independently reviewable. Inspired by RAGged `slice01`…`slice10` but covering ARPW product, not threads. Live code in `~/Code/arpw` and `~/Code/ragged` is the port source — not `ragged/documents/*.md`.
+Incremental, independently reviewable. Inspired by RAGged `slice01`…`slice10` but covering ARPW product, not threads. Live code in `~/Code/arpw` and `~/Code/ragged` is the port source — prefer each repo’s current README/guides over older markdown trees.
 
 ## Order
 
@@ -108,9 +108,9 @@ PR 09 does **not** depend on PR 08: generate does not read interrogation notes. 
 ## PR 11 — Docs + smoke + literature-review UAT
 
 - **Title:** `slice11: README Diataxis, smoke.sh, UAT playbook`
-- **Files:** `README.md`, `docs/*`, `scripts/smoke.sh`, `UAT/README.md` + `UAT/run-literature-review.mjs` pointed at nginx `:8080`, `tests/dogfood/*`
+- **Files:** `README.md`, `docs/*`, `scripts/smoke.sh`, `UAT/README.md` + `UAT/run-literature-review.mjs` pointed at nginx `:8082`, `tests/dogfood/*`
 - **Depends on:** PR 10
-- **Description:** User-facing walkthrough. UAT is the generate dogfood gate (pasted key for the selected `chat_provider`). **Do not copy 180s upload waits or 300s generate wait.** Use `UAT_UPLOAD_WAIT_MS(n)` / `UAT_GENERATE_WAIT_MS=1260000` / outline 180s (Testing in ARCHITECTURE). No PII PDFs committed. Run against `:8080`, not webpack `:3000`.
+- **Description:** User-facing walkthrough. UAT is the generate dogfood gate (pasted key for the selected `chat_provider`). **Do not copy ARPW’s 180s upload waits or 300s generate wait as constants.** Live runner: `UAT_UPLOAD_WAIT_MS(n) = ceil(n/10)*120000+60000` (matches `UploadZone` concurrency 10), `UAT_GENERATE_WAIT_MS=1260000`, outline 180s (Testing in ARCHITECTURE). No PII PDFs committed. Run against `:8082`, not webpack `:3001`.
 
 ## PR 12 — Polish / NFR-6 keyboard
 
