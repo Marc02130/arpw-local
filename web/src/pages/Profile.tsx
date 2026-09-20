@@ -89,6 +89,11 @@ export const Profile: React.FC = () => {
     <div className="max-w-xl mx-auto p-8">
       <div className="bg-white rounded shadow p-6 space-y-8">
         <h1 className="text-xl font-semibold">Profile</h1>
+        {llm && !(llm.openai.configured || llm.xai.configured || llm.anthropic.configured) ? (
+          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            No chat key saved. Paste one below to interrogate or generate. Uploads still work without a key.
+          </p>
+        ) : null}
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
         {saved ? <p className="text-sm text-green-700">Saved.</p> : null}
 

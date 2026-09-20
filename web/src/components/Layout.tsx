@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, type LlmProvider } from '../lib/api';
+import { MAIN_CONTENT_ID, SKIP_TO_CONTENT_HREF } from '../lib/keyboardFlows';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, llm, logout, refreshLlm } = useAuth();
@@ -14,6 +15,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <a href={SKIP_TO_CONTENT_HREF} className="skip-link">
+        Skip to main content
+      </a>
       <header className="bg-white border-b px-6 py-3 flex items-center justify-between gap-4">
         <nav className="flex items-center gap-4 text-sm">
           <Link className="font-semibold text-gray-900" to="/dashboard">
@@ -62,7 +66,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </button>
         </div>
       </header>
-      {children}
+      <main id={MAIN_CONTENT_ID} tabIndex={-1}>
+        {children}
+      </main>
     </div>
   );
 };

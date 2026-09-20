@@ -66,9 +66,10 @@ export const Login: React.FC = () => {
             />
           </label>
         ) : null}
-        <label className="block text-sm">
+        <label className="block text-sm" htmlFor="email">
           Email
           <input
+            id="email"
             className="mt-1 w-full border rounded px-3 py-2"
             type="email"
             value={email}
@@ -76,9 +77,10 @@ export const Login: React.FC = () => {
             autoComplete="email"
           />
         </label>
-        <label className="block text-sm">
+        <label className="block text-sm" htmlFor="password">
           Password
           <input
+            id="password"
             className="mt-1 w-full border rounded px-3 py-2"
             type="password"
             value={password}

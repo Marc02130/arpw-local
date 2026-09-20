@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { documentsApi, type SourceRole } from '../lib/api';
+import { UPLOAD_ZONE_ROLE, isActivateKey } from '../lib/keyboardFlows';
 
 const ACCEPTED = '.pdf,.docx,.txt';
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -98,9 +99,16 @@ export const UploadZone: React.FC<Props> = ({ kind, existingCount, cap, onChange
       />
       <button
         type="button"
+        role={UPLOAD_ZONE_ROLE}
+        tabIndex={busy ? -1 : 0}
         disabled={busy}
         className="border border-dashed rounded px-4 py-6 w-full text-sm text-gray-600 disabled:opacity-50"
         onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (!isActivateKey(e.key) || busy) return;
+          e.preventDefault();
+          inputRef.current?.click();
+        }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();

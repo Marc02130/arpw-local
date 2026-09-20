@@ -44,6 +44,11 @@ export const Dashboard: React.FC = () => {
           </Link>
           .
         </p>
+        {llm && !(llm.openai.configured || llm.xai.configured || llm.anthropic.configured) ? (
+          <p className="mt-2 text-sm text-amber-800">
+            No chat key saved. Paste one on Profile before interrogate or generate. Uploads still work.
+          </p>
+        ) : null}
       </div>
 
       <section className="bg-white rounded shadow p-6 space-y-3">
@@ -85,13 +90,28 @@ export const Dashboard: React.FC = () => {
                 <span>
                   {p.title} · {p.paper_type} · v{p.version}
                 </span>
-                <Link className="text-primary-600" to={`/generate/${p.paper_id}`}>
-                  Continue
-                </Link>
+                <span className="flex gap-2">
+                  <Link className="text-primary-600" to={`/generate/${p.paper_id}`}>
+                    Continue
+                  </Link>
+                  <button
+                    type="button"
+                    className="text-red-600 text-xs"
+                    aria-label={`Delete ${p.title}`}
+                    onClick={() => {
+                      if (!window.confirm(`Delete “${p.title}”?`)) return;
+                      void papersApi.remove(p.paper_id).then(reload);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </span>
               </li>
             ))}
           </ul>
-        ) : null}
+        ) : (
+          <p className="text-sm text-gray-500">No drafts yet. Start a paper above.</p>
+        )}
       </section>
 
       <section className="bg-white rounded shadow p-6 space-y-3">
@@ -99,6 +119,7 @@ export const Dashboard: React.FC = () => {
         <UploadZone kind="literature" existingCount={literature.length} cap={500} onChanged={reload} />
         <FileList
           rows={literature}
+          empty="No supporting papers yet. Drop a pdf, docx, or txt to index."
           onDelete={(id) => void documentsApi.deleteReference(id).then(reload)}
         />
       </section>
@@ -108,6 +129,7 @@ export const Dashboard: React.FC = () => {
         <UploadZone kind="primary" existingCount={primary.length} cap={100} onChanged={reload} />
         <FileList
           rows={primary}
+          empty="No original-research files yet. Optional for literature reviews."
           onDelete={(id) => void documentsApi.deleteReference(id).then(reload)}
         />
       </section>
@@ -115,23 +137,32 @@ export const Dashboard: React.FC = () => {
       <section className="bg-white rounded shadow p-6 space-y-3">
         <h2 className="font-medium">Style examples · {examples.length}/10</h2>
         <UploadZone kind="example" existingCount={examples.length} cap={10} onChanged={reload} />
-        <ul className="text-sm divide-y">
-          {examples.map((row) => (
-            <li key={row.file_id} className="py-2 flex justify-between gap-3">
-              <span>
-                {row.file_name} · {statusLabel(row.status, row.chunk_count)}
-                {row.error_message ? ` · ${row.error_message}` : ''}
-              </span>
-              <button
-                type="button"
-                className="text-red-600 text-xs"
-                onClick={() => void documentsApi.deleteExample(row.file_id).then(reload)}
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
+        {examples.length === 0 ? (
+          <p className="text-sm text-gray-500">No style examples yet. Optional — for voice only.</p>
+        ) : (
+          <ul className="text-sm divide-y">
+            {examples.map((row) => (
+              <li key={row.file_id} className="py-2 flex justify-between gap-3">
+                <span>
+                  {row.file_name} · {statusLabel(row.status, row.chunk_count)}
+                  {row.status === 'failed'
+                    ? ` · Couldn’t parse this file. Delete it and try another format. ${row.error_message || ''}`
+                    : row.error_message
+                      ? ` · ${row.error_message}`
+                      : ''}
+                </span>
+                <button
+                  type="button"
+                  className="text-red-600 text-xs"
+                  aria-label={`Delete ${row.file_name}`}
+                  onClick={() => void documentsApi.deleteExample(row.file_id).then(reload)}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );
@@ -140,18 +171,31 @@ export const Dashboard: React.FC = () => {
 const FileList: React.FC<{
   rows: ReferenceFile[];
   onDelete: (id: string) => void;
-}> = ({ rows, onDelete }) => (
-  <ul className="text-sm divide-y">
-    {rows.map((row) => (
-      <li key={row.file_id} className="py-2 flex justify-between gap-3">
-        <span>
-          {row.file_name} · {statusLabel(row.status, row.chunk_count)}
-          {row.error_message ? ` · ${row.error_message}` : ''}
-        </span>
-        <button type="button" className="text-red-600 text-xs" onClick={() => onDelete(row.file_id)}>
-          Delete
-        </button>
-      </li>
-    ))}
-  </ul>
-);
+  empty: string;
+}> = ({ rows, onDelete, empty }) =>
+  rows.length === 0 ? (
+    <p className="text-sm text-gray-500">{empty}</p>
+  ) : (
+    <ul className="text-sm divide-y">
+      {rows.map((row) => (
+        <li key={row.file_id} className="py-2 flex justify-between gap-3">
+          <span>
+            {row.file_name} · {statusLabel(row.status, row.chunk_count)}
+            {row.status === 'failed'
+              ? ` · Couldn’t parse this file. Delete it and try another format. ${row.error_message || ''}`
+              : row.error_message
+                ? ` · ${row.error_message}`
+                : ''}
+          </span>
+          <button
+            type="button"
+            className="text-red-600 text-xs"
+            aria-label={`Delete ${row.file_name}`}
+            onClick={() => onDelete(row.file_id)}
+          >
+            Delete
+          </button>
+        </li>
+      ))}
+    </ul>
+  );

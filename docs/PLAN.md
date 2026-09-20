@@ -4,7 +4,7 @@
 |---|---|
 | **Title** | arpw-local slice plan |
 | **Date** | 2026-09-20 |
-| **Status** | In progress — slices 01–11 landed on `slice11-docs-uat`; PR 11 (docs/UAT) is open. PR 12 (keyboard) is not started. |
+| **Status** | Slices 01–11 on `main`. PR 12 (keyboard + empty states) in progress. |
 | **Spec** | [ARCHITECTURE.md](./ARCHITECTURE.md) (behavior, schema, APIs, Key Decisions) |
 | **Intent** | [PRODUCT_REQUIREMENTS.md](./PRODUCT_REQUIREMENTS.md) |
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   CITATION_STYLES,
   OUTPUT_FORMATS,
@@ -10,10 +11,24 @@ import {
   type Passage,
   type Pin,
 } from '../lib/api';
+import {
+  GENERATE_BUTTON_ID,
+  GENERATE_CITATION_STYLE_ID,
+  GENERATE_OUTLINE_BUTTON_ID,
+  GENERATE_OUTPUT_FORMAT_ID,
+  GENERATE_PAPER_TYPE_ID,
+  GENERATE_PROMPT_ID,
+  PAPER_OUTLINE_ID,
+  QUERY_SOURCES_BUTTON_ID,
+} from '../lib/keyboardFlows';
 
 export const Generate: React.FC = () => {
   const { paperId } = useParams<{ paperId: string }>();
   const navigate = useNavigate();
+  const { llm } = useAuth();
+  const hasChatKey = Boolean(
+    llm && (llm.openai.configured || llm.xai.configured || llm.anthropic.configured),
+  );
   const [paper, setPaper] = useState<Paper | null>(null);
   const [title, setTitle] = useState('');
   const [paperType, setPaperType] = useState('Empirical Study');
@@ -100,6 +115,15 @@ export const Generate: React.FC = () => {
       </p>
       <div className="bg-white rounded shadow p-6 space-y-4">
         <h1 className="text-xl font-semibold">Prompt</h1>
+        {hasChatKey ? null : (
+          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            No chat key saved.{' '}
+            <Link className="text-primary-600" to="/profile">
+              Paste an API key on Profile
+            </Link>{' '}
+            before outline or generate.
+          </p>
+        )}
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
         <label className="block text-sm">
           Title
@@ -110,9 +134,10 @@ export const Generate: React.FC = () => {
             onBlur={() => void persist({ title })}
           />
         </label>
-        <label className="block text-sm">
+        <label className="block text-sm" htmlFor={GENERATE_PAPER_TYPE_ID}>
           Paper Type
           <select
+            id={GENERATE_PAPER_TYPE_ID}
             className="mt-1 w-full border rounded px-3 py-2"
             value={paperType}
             onChange={(e) => {
@@ -128,9 +153,10 @@ export const Generate: React.FC = () => {
           </select>
         </label>
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
+          <label className="block text-sm" htmlFor={GENERATE_CITATION_STYLE_ID}>
             Citation Style
             <select
+              id={GENERATE_CITATION_STYLE_ID}
               className="mt-1 w-full border rounded px-3 py-2"
               value={citationStyle}
               onChange={(e) => {
@@ -145,9 +171,10 @@ export const Generate: React.FC = () => {
               ))}
             </select>
           </label>
-          <label className="block text-sm">
+          <label className="block text-sm" htmlFor={GENERATE_OUTPUT_FORMAT_ID}>
             Output Format
             <select
+              id={GENERATE_OUTPUT_FORMAT_ID}
               className="mt-1 w-full border rounded px-3 py-2"
               value={outputFormat}
               onChange={(e) => {
@@ -178,9 +205,10 @@ export const Generate: React.FC = () => {
             ))}
           </div>
         </fieldset>
-        <label className="block text-sm">
+        <label className="block text-sm" htmlFor={GENERATE_PROMPT_ID}>
           Research prompt
           <textarea
+            id={GENERATE_PROMPT_ID}
             className="mt-1 w-full border rounded px-3 py-2 min-h-[8rem]"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -190,6 +218,7 @@ export const Generate: React.FC = () => {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
+            id={QUERY_SOURCES_BUTTON_ID}
             disabled={busy || !prompt.trim()}
             className="border rounded px-4 py-2 text-sm disabled:opacity-50"
             onClick={() => void querySources()}
@@ -198,7 +227,8 @@ export const Generate: React.FC = () => {
           </button>
           <button
             type="button"
-            disabled={busy || !prompt.trim() || sections.length === 0}
+            id={GENERATE_OUTLINE_BUTTON_ID}
+            disabled={busy || !prompt.trim() || sections.length === 0 || !hasChatKey}
             className="border rounded px-4 py-2 text-sm disabled:opacity-50"
             onClick={() => {
               if (!paperId) return;
@@ -219,7 +249,8 @@ export const Generate: React.FC = () => {
           </button>
           <button
             type="button"
-            disabled={busy || !prompt.trim() || sections.length === 0}
+            id={GENERATE_BUTTON_ID}
+            disabled={busy || !prompt.trim() || sections.length === 0 || !hasChatKey}
             className="bg-primary-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
             onClick={() => {
               if (!paperId) return;
@@ -249,10 +280,16 @@ export const Generate: React.FC = () => {
       </div>
       {outline ? (
         <div className="bg-white rounded shadow p-6">
-          <h2 className="font-medium mb-2">Outline</h2>
+          <h2 className="font-medium mb-2" id={PAPER_OUTLINE_ID}>
+            Outline
+          </h2>
           <pre className="text-sm whitespace-pre-wrap font-sans">{outline}</pre>
         </div>
-      ) : null}
+      ) : (
+        <p id={PAPER_OUTLINE_ID} className="text-sm text-gray-500 px-1">
+          No outline yet. Generate outline after you have a prompt and a chat key.
+        </p>
+      )}
       {draft ? (
         <div className="bg-white rounded shadow p-6 space-y-3">
           <h2 className="font-medium">Draft</h2>

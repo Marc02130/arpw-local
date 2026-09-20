@@ -124,6 +124,7 @@ export const Library: React.FC = () => {
                       <button
                         type="button"
                         className="text-red-600"
+                        aria-label={`Delete ${latest.title}`}
                         onClick={() => {
                           if (!window.confirm(`Delete “${latest.title}” v${latest.version}?`)) return;
                           void papersApi.remove(latest.paper_id).then(reload);
