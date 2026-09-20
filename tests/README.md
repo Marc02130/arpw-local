@@ -15,3 +15,5 @@ Operator scripts must use **`http://localhost:8082`**, not `http://127.0.0.1:808
 **Harness-only (Ragged QA, Medium):** `scripts/dogfood.py` `request()` always UTF-8 `.decode()`s the body, so `GET …/export.docx` raises `UnicodeDecodeError` before status is checked. Product Word export is not implicated unless a separate binary GET fails. Same script: Origin default vs `PUBLIC_ORIGINS` above.
 
 Markers: `unit`, `uat`, `dogfood`, `slice01`…`slice12`.
+
+Point-in-time gate notes: [`results/README.md`](results/README.md) ([`results/SLICE11_UAT.md`](results/SLICE11_UAT.md)).

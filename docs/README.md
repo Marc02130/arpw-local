@@ -15,7 +15,8 @@ The user-facing walkthrough is [`../README.md`](../README.md). Do not treat READ
 | `TECHNICAL_SPECIFICATION.md` | As-built (placeholder) | Not written yet. Schema, APIs, ingest, and generate as-built live in code plus [ARCHITECTURE.md](./ARCHITECTURE.md) until this file exists |
 | `GENERATION_SLICES.md` / `OUTLINE_SLICES.md` / `INTERROGATION_SLICES.md` | Historical product intent | Ported from ARPW; status = port. Not written until those PRs |
 | [../UAT/README.md](../UAT/README.md) | UAT / dogfood | Literature-review playbook against `:8082`. Do not copy ARPW’s 180s/300s waits as constants (`ceil(n/10)*120s+60s` upload; generate 1260s) |
-| [../tests/README.md](../tests/README.md) | Tests | pytest unit/uat/dogfood + Jest + [`../scripts/smoke.sh`](../scripts/smoke.sh) + UAT runner |
+| [../tests/README.md](../tests/README.md) | Tests | pytest unit/uat/dogfood + Jest + [`../scripts/smoke.sh`](../scripts/smoke.sh) + [`../scripts/dogfood.sh`](../scripts/dogfood.sh) + UAT runner |
+| [../tests/results/README.md](../tests/results/README.md) | Gate evidence | Point-in-time UAT/dogfood notes (not live) |
 
 **Which file to open**
 
@@ -28,7 +29,9 @@ The user-facing walkthrough is [`../README.md`](../README.md). Do not treat READ
 
 - Unit / Compose UAT / live pytest dogfood: [`../tests/README.md`](../tests/README.md)
 - Smoke: [`../scripts/smoke.sh`](../scripts/smoke.sh)
+- Operator dogfood (live `xai-` key): [`../scripts/dogfood.sh`](../scripts/dogfood.sh)
 - Literature-review UAT: [`../UAT/README.md`](../UAT/README.md)
+- Latest recorded gate: [`../tests/results/SLICE11_UAT.md`](../tests/results/SLICE11_UAT.md)
 
 ## References
 
