@@ -6,7 +6,8 @@ outline → generate → library. Requires a live xai- key (DOGFOOD_XAI_KEY or
 UAT/.uat-grok-key). Exit 2 if the key is missing.
 
   docker compose up --build
-  ./scripts/dogfood.py
+  DOGFOOD_BASE_URL=http://localhost:8082 ./scripts/dogfood.py
+  # Default BASE is 127.0.0.1:8082; PUBLIC_ORIGINS lists localhost — use localhost for Origin.
 """
 
 from __future__ import annotations
