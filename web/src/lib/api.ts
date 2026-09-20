@@ -212,6 +212,7 @@ export const papersApi = {
   patch: (id: string, body: Record<string, unknown>) =>
     request<Paper>(`/papers/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   remove: (id: string) => request<void>(`/papers/${id}`, { method: 'DELETE' }),
+  regenerate: (id: string) => request<Paper>(`/papers/${id}/regenerate`, { method: 'POST' }),
   retrieve: (id: string, body: { research_prompt: string; paper_type: string; sections?: string[] }) =>
     request<{ passages: Passage[] }>(`/papers/${id}/retrieve`, {
       method: 'POST',
@@ -260,10 +261,15 @@ export const documentsApi = {
   uploadReference: (file: File, sourceRole: SourceRole) =>
     postFile<ReferenceFile>('/references', file, { source_role: sourceRole }),
   deleteReference: (id: string) => request<void>(`/references/${id}`, { method: 'DELETE' }),
-  patchReference: (id: string, source_role: SourceRole) =>
+  patchReference: (id: string, body: { source_role?: SourceRole; citation_text?: string }) =>
     request<ReferenceFile>(`/references/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ source_role }),
+      body: JSON.stringify(body),
+    }),
+  lookupCitation: (file_id: string, doi?: string) =>
+    request<ReferenceFile>('/citations/lookup', {
+      method: 'POST',
+      body: JSON.stringify({ file_id, doi: doi || null }),
     }),
   listExamples: () => request<ExampleFile[]>('/examples'),
   uploadExample: (file: File) => postFile<ExampleFile>('/examples', file),

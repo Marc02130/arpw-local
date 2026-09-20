@@ -239,6 +239,41 @@ def regenerate_paper(
     return _with_count(session, nxt)
 
 
+@router.get("/{paper_id}/export.docx")
+def export_docx(
+    paper: UserPaper = Depends(get_owned_paper),
+):
+    from io import BytesIO
+
+    from docx import Document
+    from fastapi.responses import StreamingResponse
+
+    from app.services.generate import DRAFT_DISCLAIMER
+
+    doc = Document()
+    doc.add_heading(paper.title or "Untitled paper", level=1)
+    for raw in (paper.content or "").split("\n"):
+        line = raw.strip()
+        if not line:
+            continue
+        if line.startswith("## "):
+            doc.add_heading(line[3:].strip(), level=2)
+        elif line.startswith("# "):
+            doc.add_heading(line[2:].strip(), level=1)
+        else:
+            doc.add_paragraph(line)
+    doc.add_paragraph(DRAFT_DISCLAIMER)
+    buf = BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    filename = f"{paper.title or 'paper'}-v{paper.version}.docx"
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.post("/{paper_id}/retrieve")
 def query_sources(
     body: RetrieveBody,

@@ -8,6 +8,7 @@ from app.routers.auth import router as auth_router
 from app.routers.settings import router as settings_router
 from app.routers.documents import router as documents_router
 from app.routers.papers import router as papers_router
+from app.routers.citations import router as citations_router
 
 app = FastAPI(title="arpw-local")
 app.add_middleware(OriginAllowlistMiddleware)
@@ -28,6 +29,7 @@ api.include_router(auth_router)
 api.include_router(settings_router)
 api.include_router(documents_router)
 api.include_router(papers_router)
+api.include_router(citations_router)
 
 
 @api.get("/health")

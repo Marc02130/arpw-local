@@ -22,6 +22,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <Link className="text-gray-600 hover:text-gray-900" to="/dashboard">
             Dashboard
           </Link>
+          <Link className="text-gray-600 hover:text-gray-900" to="/library">
+            Library
+          </Link>
           <Link className="text-gray-600 hover:text-gray-900" to="/profile">
             Profile
           </Link>

@@ -9,6 +9,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
 import { Generate } from './pages/Generate';
 import { Interrogate } from './pages/Interrogate';
+import { Library } from './pages/Library';
 import { Layout } from './components/Layout';
 
 const Gate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -68,6 +69,16 @@ const Shell: React.FC = () => {
           <Gate>
             <Layout>
               <Profile />
+            </Layout>
+          </Gate>
+        }
+      />
+      <Route
+        path="/library"
+        element={
+          <Gate>
+            <Layout>
+              <Library />
             </Layout>
           </Gate>
         }

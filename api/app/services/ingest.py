@@ -42,6 +42,12 @@ def ingest_reference(session: Session, doc: Reference, data: bytes, kind: str) -
         doc.file_type = KIND_MIME[kind]
         doc.updated_at = _now()
         session.commit()
+        try:
+            from app.services import bibliographic as bibliographic_service
+
+            bibliographic_service.fill_citation(session, doc)
+        except Exception:
+            pass
     except Exception as exc:  # noqa: BLE001
         session.rollback()
         fail_reference(session, doc.file_id, str(exc))
