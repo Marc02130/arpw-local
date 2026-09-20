@@ -8,6 +8,7 @@ UAT/.uat-grok-key). Exit 2 if the key is missing.
   docker compose up --build
   DOGFOOD_BASE_URL=http://localhost:8082 ./scripts/dogfood.py
   # Default BASE is 127.0.0.1:8082; PUBLIC_ORIGINS lists localhost — use localhost for Origin.
+  # request() UTF-8-decodes bodies; GET export.docx is harness-only UnicodeDecodeError (not product).
 """
 
 from __future__ import annotations

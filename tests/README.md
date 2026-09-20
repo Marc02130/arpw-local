@@ -12,4 +12,6 @@
 
 Operator scripts must use **`http://localhost:8082`**, not `http://127.0.0.1:8082`, unless `PUBLIC_ORIGINS` also lists the 127.0.0.1 origin. Compose `.env` allowlists `http://localhost:8082` and `http://localhost:3001` only. `dogfood.py` sends `Origin` matching `DOGFOOD_BASE_URL`; the 127.0.0.1 default then fails Settings PUT with **403 Invalid origin**.
 
+**Harness-only (Ragged QA, Medium):** `scripts/dogfood.py` `request()` always UTF-8 `.decode()`s the body, so `GET …/export.docx` raises `UnicodeDecodeError` before status is checked. Product Word export is not implicated unless a separate binary GET fails. Same script: Origin default vs `PUBLIC_ORIGINS` above.
+
 Markers: `unit`, `uat`, `dogfood`, `slice01`…`slice12`.
