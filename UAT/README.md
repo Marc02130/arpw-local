@@ -68,14 +68,16 @@ Do **not** copy ARPW’s 180s upload / 300s generate waits.
 
 `UAT_UPLOAD_WAIT_MS(n) = ceil(n / 10) * 120000 + 60000`
 
+That matches `web/src/components/UploadZone.tsx` (`DROP_LIMIT = 10`, `CONCURRENCY = 10`) and `UAT/run-literature-review.mjs`. The 180s/300s **upload** numbers below are that formula (one or two waves of 10), not ARPW’s copied 180s upload / 300s generate constants. Generate is **1_260_000 ms**.
+
 | Site | Timeout |
 |---|---|
-| 10-file drop indexed | **180_000 ms** |
-| 20 files indexed | **300_000 ms** |
+| 10-file drop indexed | **180_000 ms** (`ceil(10/10)*120s+60s`) |
+| 20 files indexed | **300_000 ms** (`ceil(20/10)*120s+60s`) |
 | Outline | **180_000 ms** |
 | Generate (five chat sections) | **1_260_000 ms** |
 
-SPA drop batch is 10; uvicorn has 2 workers. Extra POSTs queue in nginx.
+SPA in-flight upload concurrency is **10**. uvicorn still has 2 workers; extra POSTs queue in nginx.
 
 ## Fail the UAT
 

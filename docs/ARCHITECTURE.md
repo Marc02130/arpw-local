@@ -4,13 +4,13 @@
 |---|---|
 | **Title** | arpw-local: ARPW product on the RAGged local stack |
 | **Author** | Engineering (draft) |
-| **Date** | 2026-09-19 |
-| **Status** | Draft |
+| **Date** | 2026-09-20 |
+| **Status** | In progress (slices 01–11 on `slice11-docs-uat`; PR 12 not started) |
 | **Product source** | `~/Code/arpw` (functional copy) |
 | **Stack source** | `~/Code/ragged` (Compose / FastAPI / React / pgvector) |
-| **Target repo** | `~/Code/arpw-local` (empty; no commits yet) |
+| **Target repo** | `~/Code/arpw-local` (this repo) |
 
-This document is the implementation spec (what to build). Slice order lives in [PLAN.md](./PLAN.md). Claims about ARPW and RAGged cite live files, not stale markdown under `ragged/documents/` (those still describe a Supabase Edge stack and **must not** be copied).
+This document is the implementation spec (what to build). Slice order lives in [PLAN.md](./PLAN.md). Claims about ARPW and RAGged cite **live code** plus each repo’s current README/guides. Prefer `ragged/` source and its current docs over any older markdown tree.
 
 ---
 
@@ -48,7 +48,7 @@ Pain points of that stack for a *local* rewrite:
 
 From `ragged/README.md`, `ragged/docker-compose.yml`, and `ragged/api/app/`:
 
-- One public HTTP port: nginx `:8082` proxies `/api` to FastAPI `:8000` (RAGged keeps `:8080`).
+- One public HTTP port: nginx `:8080` proxies `/api` to FastAPI `:8000`. **arpw-local** publishes nginx on **`:8082`** so RAGged can keep `:8080`.
 - `pgvector/pgvector:pg16`; Alembic on API boot; named volumes `pgdata` and `uploads` (`UPLOAD_ROOT=/data/uploads`).
 - Cookie JWT (`ragged_session`, HttpOnly, SameSite=lax); email/password; **no** email confirmation.
 - Multipart upload in the API process: validate → write file → row `processing` → extract/chunk/embed → `ready`/`failed`; stale processing timeout 600s; delete file+rows+chunks (`ragged/api/app/routers/documents.py`).
@@ -67,7 +67,7 @@ RAGged’s product is *thread-centric document Q&A*. Copy its **mechanics**, not
 
 - Functional copy of ARPW P0/P1/P2 behavior that is already shipped (see [Feature parity matrix](#feature-parity-matrix)): auth with confirmation + reset, three upload sources (original research / examples / literature), retrieve, pins, interrogate (all three allowed, literature-focused), outline, generate (eight section checkboxes + type/style/format dropdowns), library, profile, **OpenAI / xAI / Anthropic chat keys** (RAGged).
 - Single-command local DX: `docker compose up --build` → `http://localhost:8082/`.
-- Same literature-review UAT playbook as `arpw/UAT/README.md` (20 PDFs, Grok key fixture, steps 1–13), adapted to port 8080 and cookie auth.
+- Same literature-review UAT playbook as `arpw/UAT/README.md` (20 PDFs, Grok key fixture, steps 1–13), adapted to **`:8082`** and cookie auth.
 - An engineer can implement from this document without inventing APIs that contradict live RAGged or ARPW code.
 
 ### Non-Goals (MVP)
@@ -80,7 +80,7 @@ RAGged’s product is *thread-centric document Q&A*. Copy its **mechanics**, not
 - Mixing embedding models in one cosine search.
 - Eval harness / paraphrase recall@k (ARPW leftover, not UAT).
 - Journal submission, plagiarism scanning, publisher templates, mobile-first layout.
-- Copying `ragged/documents/API.md` or `AUTH_SYSTEM.md` (stale Supabase).
+- Copying stale stack markdown from another repo instead of live RAGged code and its current README/guides.
 
 ---
 
@@ -98,7 +98,7 @@ RAGged’s product is *thread-centric document Q&A*. Copy its **mechanics**, not
 | D8 | Storage | Named volume `uploads` → `/data/uploads`; key `{user_id}/{file_id}.{ext}` | RAGged volume mechanics; ARPW user isolation; extension kept so `detect_kind` is not the only source of truth on disk. |
 | D9 | Upload/ingest | RAGged **per-file** in-process mechanic: SPA `POST` **one file per request**; validate → write → `processing` → extract/chunk/embed → `ready`/`failed`; 600s stale timeout. nginx `client_max_body_size 55m`; `MAX_UPLOAD_BODY_BYTES=12582912` (12 MiB) | Matches ARPW `UploadZone.uploadFile` (one Storage object + one processor invoke per file). A 10×10 MB batch is 10 POSTs, not one 105 MB multipart. Caps, `source_role`, IMRaD, `chunk_role` stay. |
 | D10 | Retrieval / generate | Rewrite FastAPI retrieve against ARPW **product rules** (pins-first, role filter, hybrid FTS+RRF); port templates/generate/interrogate/citations. Full-draft generate; nginx generate location duplicates full proxy + `2100s` | Generate section-filters the three corpora. Interrogate prefers literature (D15). Chat abort is **120s** → `"Chat request timed out after 2 minutes"` (same helper as Interrogate). Do **not** line-port `retrievePassages.ts` `hashEmbedding` / `matchWithModelFallback`. |
-| D11 | Frontend | Webpack + nginx (RAGged Compose) + **ARPW screens** + `react-router-dom` | One public port. Vite is a documented *non*-choice unless we give up nginx-on-8080. |
+| D11 | Frontend | Webpack + nginx (RAGged Compose) + **ARPW screens** + `react-router-dom` | One public port. Vite is a documented *non*-choice unless we give up nginx-on-8082 (RAGged keeps `:8080`). |
 | D12 | Testing | pytest unit/uat/dogfood + Jest; port ARPW helper tests; literature-review UAT | RAGged test shape; ARPW product assertions (caps, `[S#]`, nfr7probe). |
 | D13 | Password length | Keep ARPW **6** (not RAGged’s 8) | AUTH product copy and `validateAuth.ts` `MIN_PASSWORD_LENGTH = 6`. |
 | D14 | Docs | Diataxis: root `README.md` + `docs/` (not hidden `.docs/`) | ARPW index shape, written for this stack. |
@@ -268,7 +268,7 @@ arpw-local/
 │   └── dogfood/
 ├── UAT/                           # literature-review playbook (port arpw/UAT)
 │   ├── README.md
-│   ├── run-literature-review.mjs  # Playwright against :8080
+│   ├── run-literature-review.mjs  # Playwright against :8082
 │   └── papers/                    # gitignored PDFs
 ├── docs/                          # Diataxis engineering specs
 ├── scripts/smoke.sh
@@ -289,7 +289,7 @@ arpw-local/
 - Vite would mean either (a) a second public port (`:5173`, ARPW today) or (b) a custom nginx that still has to proxy `/api` — extra moving parts for no product gain.
 - ARPW’s `react-router-dom` routes are required (`/login`, `/verify-email`, `/generate/interrogate?paper=…`). Add `react-router-dom` 6 to `web/package.json` (RAGged’s SPA has no router). Keep React 18 + TypeScript + Tailwind 3 + Jest.
 
-Dev: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build` then `cd web && npm run dev` (webpack `:3000` → `localhost:8001`). `PUBLIC_ORIGINS` includes both `http://localhost:8080` and `http://localhost:3000` (RAGged `origin.py`).
+Dev: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build` then `cd web && npm run dev` (webpack `:3001` → `localhost:8002`). `PUBLIC_ORIGINS` includes both `http://localhost:8082` and `http://localhost:3001`. RAGged’s overlay is `:8001` / `:3000`.
 
 Port ARPW screens that the router actually mounts (`arpw/.docs/TECHNICAL_SPECIFICATION.md` §3). **Do not port** unused `LoginPage.tsx` / `ProfilePage.tsx` / `DashboardPage.tsx` (App mounts `Login.tsx` / `Profile.tsx` / `HomePage.tsx`). `ProfilePage.tsx` still has a `grok_api_key` form field — never copy that.
 
@@ -369,7 +369,7 @@ sequenceDiagram
   API->>M: SMTP Confirm Your Email
   API-->>B: 201 {id, email, full_name, needs_email_confirmation: true}<br/>NO Set-Cookie
   B->>B: navigate /verify-email
-  Note over B,M: User opens http://localhost:8025
+  Note over B,M: User opens http://localhost:8026
   B->>API: GET /api/auth/confirm?token=...
   API->>DB: match hash, set email_confirmed_at, used_at
   API-->>B: 302 Location: /login?confirmed=1
@@ -389,7 +389,7 @@ sequenceDiagram
 | `POST /api/auth/forgot-password` | `{email}`. Always 200 `"If an account exists for … a reset link is on its way."` Send reset mail only for **confirmed** users. Link: `{PUBLIC_APP_URL}/reset-password?token=...`. |
 | `POST /api/auth/reset-password` | `{token, password}`. One-shot. Sets password, marks token used, **sets session cookie**. SPA goes to `/dashboard`. Invalid/expired/used → 400 `"This reset link is invalid or has expired"`. |
 
-`PUBLIC_APP_URL` default `http://localhost:8080` (used in mail links). CSRF: copy `ragged/api/app/origin.py` as-is. Mutating requests with a **present** `Origin` not in `PUBLIC_ORIGINS` → 403. **Missing Origin is allowed** (curl, Compose tests, operators). Exempt only `POST /api/auth/login` and `POST /api/auth/register` (RAGged). Do **not** special-case forgot/reset — the SPA on `:8080`/`:3000` sends an allowed Origin; Mailpit does not POST those paths. Confirm is GET (no CSRF). SameSite=lax mitigates cross-site cookie POSTs.
+`PUBLIC_APP_URL` default `http://localhost:8082` (used in mail links). CSRF: copy `ragged/api/app/origin.py` as-is. Mutating requests with a **present** `Origin` not in `PUBLIC_ORIGINS` → 403. **Missing Origin is allowed** (curl, Compose tests, operators). Exempt only `POST /api/auth/login` and `POST /api/auth/register` (RAGged). Do **not** special-case forgot/reset — the SPA on `:8082`/`:3001` sends an allowed Origin; Mailpit does not POST those paths. Confirm is GET (no CSRF). SameSite=lax mitigates cross-site cookie POSTs.
 
 **ResetPassword is not a port of `arpw/src/components/ResetPassword.tsx`.** Live ARPW uses GoTrue `PASSWORD_RECOVERY` + `updatePassword()` with **no query token**. arpw-local:
 
@@ -402,7 +402,7 @@ sequenceDiagram
 Mail templates (plain text is enough):
 
 - Subject `Confirm Your Email` — link to `{PUBLIC_APP_URL}/api/auth/confirm?token=...` (API 302 to `/login` or `/verify-email?error=invalid`).
-- Subject `Reset Your Password` — link to `{PUBLIC_APP_URL}/reset-password?token=...`. Mailpit UI: `http://localhost:8025`.
+- Subject `Reset Your Password` — link to `{PUBLIC_APP_URL}/reset-password?token=...`. Mailpit UI: `http://localhost:8026`.
 
 ### Chat keys (D4)
 
@@ -550,7 +550,7 @@ location ~ ^/api/papers/[^/]+/generate/?$ {
 | `/api/` (ingest, retrieve, interrogate, **outline**) | **600s** | Copy RAGged prefix block |
 | `~ ^/api/papers/[^/]+/generate/?$` | **2100s** | Full proxy settings duplicated; optional trailing slash |
 
-UAT assertion (PR 09): `nginx.conf` generate block contains both `proxy_pass http://api:8000;` and `2100s`. Keep `/api/health` async. Dogfood generate against nginx `:8080` only — webpack-dev-server `:3000` proxy has no 2100s timeout; do not dogfood generate there. `/api/ready` may stall if both workers are in generate.
+UAT assertion (PR 09): `nginx.conf` generate block contains both `proxy_pass http://api:8000;` and `2100s`. Keep `/api/health` async. Dogfood generate against nginx `:8082` only — webpack-dev-server `:3001` proxy has no 2100s timeout; do not dogfood generate there. `/api/ready` may stall if both workers are in generate.
 
 ### Upload & ingest (D8, D9)
 
@@ -588,7 +588,7 @@ sequenceDiagram
   participant API
   participant FS as uploads volume
   participant DB
-  Note over SPA: drop ≤ 10 files; in-flight concurrency 2
+  Note over SPA: drop ≤ 10 files; in-flight concurrency 10
   SPA->>API: POST /api/references multipart one file + source_role
   API->>API: detect_kind, 0 < size ≤ 10 MiB, body ≤ 12 MiB
   API->>DB: SELECT users … FOR UPDATE (user row)
@@ -752,9 +752,9 @@ POSTGRES_PASSWORD=changeme
 POSTGRES_DB=arpw
 JWT_SECRET=change-me-to-a-long-random-string-32+
 COOKIE_SECURE=false
-PUBLIC_ORIGINS=http://localhost:8080,http://localhost:3000
+PUBLIC_ORIGINS=http://localhost:8082,http://localhost:3001
 CORS_ORIGINS=
-PUBLIC_APP_URL=http://localhost:8080
+PUBLIC_APP_URL=http://localhost:8082
 EMBEDDING_PROVIDER=local
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 OPENAI_CHAT_MODEL=gpt-4o-mini
@@ -775,14 +775,14 @@ SMTP_FROM=noreply@localhost
 | `REFERENCE_FILE_CAP` | `500` | `count(*)` all statuses |
 | `EXAMPLE_FILE_CAP` | `10` | `count(*)` all statuses |
 | `UPLOAD_BATCH_SIZE` | `10` | Client drop limit only; API accepts one file |
-| `SPA_UPLOAD_CONCURRENCY` | `2` | In-flight POSTs (match uvicorn `--workers 2`) |
+| `SPA_UPLOAD_CONCURRENCY` | `10` | In-flight POSTs (`web/src/components/UploadZone.tsx` `CONCURRENCY = 10`; `api/app/config.py`). uvicorn still `--workers 2`; extra POSTs wait in nginx |
 | `INGEST_VISIBLE_CHUNKS_MS` | `120000` | NFR-4 per file |
 | `GROK_SECTION_TIMEOUT_MS` | `120000` | NFR-5; **httpx.Timeout(120)** — not the 5s default |
 | `STALE_PROCESSING` | 600s | Mark ingest failed |
 | nginx `client_max_body_size` | `55m` | One file; a 56 MB POST 413s |
 | nginx `/api/` timeout | `600s` | Ingest / retrieve / outline |
 | nginx generate timeout | `2100s` | 7 Grok sections × complete+repair × 120s = 1680s + slack |
-| `UAT_UPLOAD_WAIT_MS(n)` | `ceil(n / 2) * 120000 + 60000` | Do **not** copy ARPW 180s. 10-file wave = 660s; 20 files = 1260s |
+| `UAT_UPLOAD_WAIT_MS(n)` | `ceil(n / 10) * 120000 + 60000` | Live `UAT/run-literature-review.mjs`. Do **not** copy ARPW 180s as a constant. 10-file wave = **180s**; 20 files = **300s** |
 | `UAT_OUTLINE_WAIT_MS` | `180000` | One Grok call + retrieve (live 180s is enough vs 120s abort) |
 | `UAT_GENERATE_WAIT_MS` | `1260000` | UAT’s **five** Grok sections × complete+repair × 120s + 60s slack. **Adapt** from ARPW Playwright 300s |
 
@@ -1039,7 +1039,7 @@ Single `0001_initial` with the full schema (greenfield repo, no production data)
 | PII fixtures in git | High | NFR-3: synthetic `nfr7` PDF only; `UAT/papers/` gitignored. |
 | Prompt injection via PDFs | Medium | Frozen templates; cite-or-omit; unknown ids dropped. Not a full LLM firewall. |
 | JWT_SECRET rotation | Medium | Sessions die; Grok keys undecryptable — re-paste. Document. |
-| Mailpit exposed | Low | UI on localhost:8025 for DX; SMTP not published. Production: real SMTP, `COOKIE_SECURE=true`. |
+| Mailpit exposed | Low | UI on localhost:8026 for DX; SMTP not published. Production: real SMTP, `COOKIE_SECURE=true`. |
 
 Auth surface: open signup, no invite list (AUTH-1). Rate-limit auth emails (30/hour/user).
 
@@ -1093,28 +1093,29 @@ Greenfield repo. No production users.
 |---|---|
 | `pytest` | Fast unit: no Compose. Helpers + FastAPI TestClient + Testcontainers pgvector where schema is needed. `EMBEDDING_PROVIDER=stub`. |
 | `pytest -m uat` | Compose stack (`compose_support.up`). Auth confirm via mailbox or test confirm helper. Upload fixture PDF. Retrieve `nfr7probe`. Caps. Isolation. Missing Grok key. |
-| `pytest -m dogfood` | Live walkthrough against `:8080` when an operator key is present; skip otherwise. |
+| `pytest -m dogfood` | Live walkthrough against `:8082` when an operator key is present; skip otherwise. |
 | `cd web && npm test` | Jest: validateAuth, fileCap, uploadProgress, sourceRole, keyboardFlows, draftPreview, exportPaper, library pagination. |
 | `./scripts/smoke.sh` | health → register → confirm (Mailpit API) → login → paper → upload fixture → retrieve hit. Chat/generate skipped without live `xai-` (exit 2, CI skips). |
-| `UAT/run-literature-review.mjs` | Playwright vs nginx `:8080` (not webpack `:3000`). Port ARPW steps 1–13 **with new waits** (do not copy 180s upload / 300s generate). Fail if no `xai-` fixture, if citations are not from the uploaded set, if Interrogate evidence is bibliography-only, if Continue restores the wrong paper type. Uncited ⚠ do not fail (QUAL-1 leftovers). |
+| `UAT/run-literature-review.mjs` | Playwright vs nginx `:8082` (not webpack `:3001`). Port ARPW steps 1–13 **with new waits** (do not copy ARPW’s 180s upload / 300s generate as constants). Fail if no `xai-` fixture, if citations are not from the uploaded set, if Interrogate evidence is bibliography-only, if Continue restores the wrong paper type. Uncited ⚠ do not fail (QUAL-1 leftovers). |
 
-Literature-review waits (PR 11 — the generate **release gate**; a copied 180s is a false product fail):
+Literature-review waits (PR 11 — the generate **release gate**; a copied ARPW 180s/300s is a false product fail when the live formula is longer):
 
-Live `UAT/run-literature-review.mjs` uses `waitUploadIdle(..., 180000)` and `waitIndexed(..., 180000)` while ARPW `Promise.all`s 10 hash-384 Edge invokes. arpw-local is MiniLM in-process with **concurrency 2**, so 20 PDFs are ~10 waves.
+Live `UAT/run-literature-review.mjs` uses `UAT_UPLOAD_WAIT_MS(n) = ceil(n / 10) * 120000 + 60000` to match `UploadZone` `DROP_LIMIT = 10` and `CONCURRENCY = 10`. ARPW `Promise.all`s 10 hash-384 Edge invokes with a flat 180s. arpw-local is MiniLM in-process; a 10-file drop is **one** concurrent wave, 20 PDFs are **two** waves.
 
 ```
 UAT_UPLOAD_WAIT_MS(n) = ceil(n / SPA_UPLOAD_CONCURRENCY) * INGEST_VISIBLE_CHUNKS_MS + 60_000
 ```
 
-| Call site (live ARPW) | n | New timeout |
-|---|---|---|
-| `waitUploadIdle` after a 10-file wave | 10 | **660_000 ms** (11 min) |
-| `waitIndexed` after wave 1 | 10 | **660_000 ms** |
-| `waitIndexed` after 20 files | 20 | **1_260_000 ms** (21 min) |
-| Outline “Generating outline” | 1 Grok | **180_000 ms** (keep) |
-| Generate “Generating...” (live 300s) | 5 Grok sections | **1_260_000 ms** |
+with live `SPA_UPLOAD_CONCURRENCY = 10` and `INGEST_VISIBLE_CHUNKS_MS = 120000`.
 
-Keep uvicorn `--workers 2` and SPA concurrency 2 for MVP; the runner must match. Raising workers later requires raising `SPA_UPLOAD_CONCURRENCY` **and** shrinking `UAT_UPLOAD_WAIT_MS` together. Dogfood generate on `:8080` only.
+| Call site | n | Timeout |
+|---|---|---|
+| 10-file drop indexed | 10 | **180_000 ms** (`ceil(10/10)*120s+60s`) |
+| 20 files indexed | 20 | **300_000 ms** (`ceil(20/10)*120s+60s`) |
+| Outline “Generating outline” | 1 chat call | **180_000 ms** (keep) |
+| Generate “Generating...” | 5 chat sections | **1_260_000 ms** |
+
+Keep uvicorn `--workers 2` and SPA concurrency **10** for the live stack; the runner must match `UploadZone` / `run-literature-review.mjs`. Raising workers later does not by itself change `UAT_UPLOAD_WAIT_MS` unless `CONCURRENCY` changes. Dogfood generate on `:8082` only.
 
 ### Port ARPW unit helpers
 
@@ -1150,9 +1151,9 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open `http://localhost:8080/login`. Mail UI: `http://localhost:8025`. Health: `GET http://localhost:8080/api/health` → `{"status":"ok"}`.
+Open `http://localhost:8082/login`. Mail UI: `http://localhost:8026`. Health: `GET http://localhost:8082/api/health` → `{"status":"ok"}`.
 
-Optional webpack overlay: same as RAGged README (API `:8001`, webpack `:3000`) for iterating on the SPA. **Dogfood generate, outline, and the literature-review UAT on nginx `:8080` only.** webpack-dev-server’s `/api` proxy has no 2100s timeout; do not raise it as a substitute for the nginx generate location.
+Optional webpack overlay: Compose `docker-compose.dev.yml` publishes API `:8002`; webpack-dev-server `:3001` (RAGged overlay is API `:8001`, webpack `:3000`). **Dogfood generate, outline, and the literature-review UAT on nginx `:8082` only.** webpack-dev-server’s `/api` proxy has no 2100s timeout; do not raise it as a substitute for the nginx generate location.
 
 Volumes `arpw-local_pgdata` and `arpw-local_uploads` (Compose project name). `docker compose down` keeps them; `down -v` deletes papers. Backup: `pg_dump` + `tar` of `/data/uploads` (copy RAGged README commands).
 
@@ -1164,17 +1165,17 @@ Diataxis, modeled on `arpw/.docs/README.md` and `arpw/README.md`, written for **
 
 | File | Role |
 |---|---|
-| `README.md` | Tutorial / how-to / reference / explanation: first run, confirm email (Mailpit `:8025`), upload, Profile chat keys, tests, ports, routes, why |
+| `README.md` | Tutorial / how-to / reference / explanation: first run, confirm email (Mailpit `:8026`), upload, Profile chat keys, tests, ports, routes, why |
 | `docs/README.md` | Spec index (this table) |
 | `docs/PRODUCT_REQUIREMENTS.md` | Copy ARPW PRD IDs; stack sentences updated (FastAPI, not Supabase) |
 | `docs/ARCHITECTURE.md` | This design (as-built, updated as slices land) |
 | `docs/PLAN.md` | Slice order (PR 01–12). Not behavior. |
-| `docs/TECHNICAL_SPECIFICATION.md` | As-built schema, APIs, ingest, generate (filled in during implementation) |
+| `docs/TECHNICAL_SPECIFICATION.md` | As-built schema, APIs, ingest, generate — **placeholder**; not in the tree yet. Use this ARCHITECTURE file plus live code until it exists. |
 | `docs/GENERATION_SLICES.md` / `OUTLINE_SLICES.md` / `INTERROGATION_SLICES.md` | Keep as historical product intent; status = ported |
-| `UAT/README.md` | Literature-review playbook against `:8080` |
+| `UAT/README.md` | Literature-review playbook against `:8082` |
 | `tests/README.md` | pytest / Jest / smoke |
 
-Do not copy `ragged/documents/*.md`.
+Do not treat another repo’s older `documents/` tree as source of truth for this stack. Prefer live RAGged code and that repo’s current README/guides.
 
 Slice order: [PLAN.md](./PLAN.md).
 
@@ -1194,8 +1195,8 @@ Legend: **Keep** = same user-visible behavior; **Adapt** = same requirement, dif
 | AUTH-4 | Profile: edit full name | **Keep** | `PATCH /api/auth/me`. |
 | AUTH-5 | Chat keys server-side, SPA no plaintext | **Adapt** | RAGged `user_llm_settings` (OpenAI / xAI / Anthropic) + last4; no pgcrypto. |
 | AUTH-6 | Invalid credentials error | **Keep** | `"Invalid email or password"`. |
-| AUTH-7 | Confirm email before app access | **Keep** | Mailpit `:8025` + hashed `email_tokens`; register sets no cookie. Confirm 302s; unique hash; 3600s. |
-| AUTH-8 | Password reset by email | **Keep** | Mailpit `:8025`; rewrite ResetPassword for `?token=` + POST `/api/auth/reset-password` (not GoTrue `isRecovery`). |
+| AUTH-7 | Confirm email before app access | **Keep** | Mailpit `:8026` + hashed `email_tokens`; register sets no cookie. Confirm 302s; unique hash; 3600s. |
+| AUTH-8 | Password reset by email | **Keep** | Mailpit `:8026`; rewrite ResetPassword for `?token=` + POST `/api/auth/reset-password` (not GoTrue `isRecovery`). |
 
 ### DOCS
 
@@ -1203,7 +1204,7 @@ Legend: **Keep** = same user-visible behavior; **Adapt** = same requirement, dif
 |---|---|---|---|
 | DOCS-1 | Refs PDF/DOCX/TXT, 10 MB, cap 500 | **Keep** | Volume instead of Storage. |
 | DOCS-2 | Examples cap 10 | **Keep** | |
-| DOCS-3 | Drag-drop, per-file progress | **Keep** | One POST per file (ARPW `uploadFile`). 80% when the POST starts, 100% on 201. Client drop ≤ 10; in-flight concurrency 2. Not one batch multipart. |
+| DOCS-3 | Drag-drop, per-file progress | **Keep** | One POST per file (ARPW `uploadFile`). 80% when the POST starts, 100% on 201. Client drop ≤ 10; in-flight concurrency **10**. Not one batch multipart. |
 | DOCS-4 | List + delete storage/metadata/vectors | **Adapt** | Named volume unlink; `status`/`chunk_count` on the row (RAGged). |
 | DOCS-5 | Parse, IMRaD chunk, embed, pgvector | **Adapt** | MiniLM instead of grok-embed/hash. Same chunk metadata + `chunk_role`. |
 | DOCS-6 | Reject bad types/oversize before write | **Keep** | Client + API `detect_kind` (magic bytes, RAGged). |
@@ -1274,13 +1275,13 @@ Legend: **Keep** = same user-visible behavior; **Adapt** = same requirement, dif
 | Risk | Severity | Mitigation |
 |---|---|---|
 | MiniLM retrieve quality ≠ ARPW Grok-embed dogfood | Medium | Literature-review UAT is the gate; IMRaD + hybrid FTS still apply. If UAT fails on retrieve, consider Grok re-embed as a follow-on (never mixed). |
-| Sync ingest/generate occupies both uvicorn workers | Medium | Async `/health` (never `/ready` as healthcheck). SPA upload concurrency 2. Generate nginx 2100s in PR 09. Dogfood single-user. Revisit workers/threadpool if dogfood stalls. |
+| Sync ingest/generate occupies both uvicorn workers | Medium | Async `/health` (never `/ready` as healthcheck). SPA upload concurrency **10** (uvicorn `--workers 2`; extra POSTs queue). Generate nginx 2100s in PR 09. Dogfood single-user. Revisit workers/threadpool if dogfood stalls. |
 | Full-draft generate exceeds 600s | High | 7 Grok sections × (complete+repair) × 120s = 1680s. Sibling nginx regex location duplicates **full** `proxy_pass` (no URI path) + headers + `2100s` in PR 09. Trailing slash optional. Outline stays on `/api/` 600s. |
 | httpx default 5s timeout | High | `httpx.Timeout(120)` / OpenAI `timeout=120` in `chat.py`; map to `CHAT_TIMEOUT_MESSAGE`. Unit-test hanging handler per provider. |
-| UAT 180s upload wait vs MiniLM concurrency 2 | High | Do not copy ARPW 180s. `UAT_UPLOAD_WAIT_MS(n) = ceil(n/2)*120s+60s` (20 files → 21 min). Generate Playwright **1260s** (five UAT Grok sections), Adapt from 300s. Runner vs `:8080`. |
+| UAT 180s upload wait vs MiniLM + SPA concurrency 10 | High | Do not copy ARPW’s 180s/300s as constants. Live `UAT_UPLOAD_WAIT_MS(n) = ceil(n/10)*120s+60s` (10 files → 180s; 20 files → 300s). Generate Playwright **1260s** (five UAT chat sections), Adapt from 300s. Runner vs `:8082`. |
 | Mixing embedding models / empty retrieve | High | Single stored string `sentence-transformers/all-MiniLM-L6-v2`; SQL `AND embedding_model = :filter_model`; no `matchWithModelFallback`. |
 | Interrogate example `[S#]` leaking into generate | Medium | Example pins rejected. Turns are notes. Generate retrieve never reads `interrogation_turns` or example vectors as evidence. |
-| Confirmation mail links use the wrong host (`localhost` vs `127.0.0.1`) | Medium | `PUBLIC_APP_URL` documented; nginx on all interfaces; README says use `localhost:8080` consistently (ARPW had this bug on 5173). Mailpit UI `:8025`. |
+| Confirmation mail links use the wrong host (`localhost` vs `127.0.0.1`) | Medium | `PUBLIC_APP_URL` documented; nginx on all interfaces; README says use `localhost:8082` consistently (ARPW had this bug on 5173). Mailpit UI `:8026`. |
 | 500-file cap test is slow | Low | Seed 499 rows in SQL in uat, like ARPW admin insert. Count includes failed. |
 | Fernet key tied to `JWT_SECRET` | Low | Document re-paste; do not rotate secret casually. |
 | Crossref/PubMed flaky on ingest | Low | Best-effort; Library lookup/paste (PR 10). |
@@ -1322,4 +1323,4 @@ No TBD on stack, auth, keys, embeddings, LLM, layout, upload transport, or PR or
 - `~/Code/ragged/web/{Dockerfile,nginx.conf,webpack.config.js,src/lib/api.ts}`
 - `~/Code/ragged/pytest.ini`, `tests/`, `scripts/smoke.sh`
 
-**Do not use:** `~/Code/ragged/documents/API.md`, `AUTH_SYSTEM.md` (stale Supabase). Ignore `~/Code/arpw/.docs/legacy/` where it conflicts.
+**Do not use** an older RAGged `documents/` tree as the stack spec. Prefer `~/Code/ragged` live code and its current README/guides. Ignore `~/Code/arpw/.docs/legacy/` where it conflicts.
